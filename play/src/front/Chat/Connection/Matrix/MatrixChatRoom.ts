@@ -42,6 +42,7 @@ import { localUserStore } from "../../../Connection/LocalUserStore";
 import { MessageNotification } from "../../../Notification/MessageNotification";
 import { notificationManager } from "../../../Notification/NotificationManager";
 import { PictureStore } from "../../../Stores/PictureStore";
+import { ChatLogger } from "../../Services/ChatLogger";
 import { MatrixChatMessage } from "./MatrixChatMessage";
 import { MatrixChatMessageReaction } from "./MatrixChatMessageReaction";
 import { matrixSecurity } from "./MatrixSecurity";
@@ -484,10 +485,26 @@ export class MatrixChatRoom
     }
 
     sendMessage(message: string) {
+        const roomId = this.matrixRoom.roomId;
+        const userId = this.matrixRoom.client.getUserId();
+
         this.matrixRoom.client
-            .sendMessage(this.matrixRoom.roomId, this.getMessageContent(message))
+            .sendMessage(roomId, this.getMessageContent(message))
             .then(() => {
                 selectedChatMessageToReply.set(null);
+
+                // Log to backend (fire and forget)
+                ChatLogger.logMessage({
+                    type: "matrix",
+                    message,
+                    author: userId ?? undefined,
+                    playerName: localUserStore.getName() ?? undefined,
+                    playerUuid: localUserStore.getLocalUser()?.uuid,
+                    matrixRoomId: roomId,
+                    raw: {
+                        roomName: this.matrixRoom.name,
+                    },
+                }).catch((e) => console.debug("Chat log failed:", e));
             })
             .catch((error) => {
                 console.error(error);

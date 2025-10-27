@@ -29,6 +29,7 @@ import { gameManager } from "../../../Phaser/Game/GameManager";
 import { availabilityStatusStore, requestedCameraState, requestedMicrophoneState } from "../../../Stores/MediaStore";
 import { localUserStore } from "../../../Connection/LocalUserStore";
 import { MessageNotification } from "../../../Notification/MessageNotification";
+import { ChatLogger } from "../../Services/ChatLogger";
 import { notificationManager } from "../../../Notification/NotificationManager";
 import { blackListManager } from "../../../WebRtc/BlackListManager";
 import { isMediaBreakpointUp } from "../../../Utils/BreakpointsUtils";
@@ -218,6 +219,22 @@ export class ProximityChatRoom implements ChatRoom {
                     message: message,
                 },
             });
+
+            // Log user-sent proximity messages to backend (fire and forget)
+            // Only log actual user messages, not system messages like "incoming"/"outcoming"
+            if (action === "proximity") {
+                ChatLogger.logMessage({
+                    type: "proximity",
+                    message,
+                    author: String(this._spaceUserId),
+                    playerName: chatUser.username,
+                    playerUuid: localUserStore.getLocalUser()?.uuid,
+                    roomId: chatUser.roomName,
+                    raw: {
+                        spaceUserId: this._spaceUserId,
+                    },
+                }).catch((e) => console.debug("Chat log failed:", e));
+            }
         }
 
         if (action === "proximity") {
