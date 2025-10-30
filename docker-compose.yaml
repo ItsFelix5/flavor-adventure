@@ -104,6 +104,15 @@ services:
       ENABLE_CHAT_UPLOAD: "false"
       ENABLE_CHAT_ONLINE_LIST: "false"
       ENABLE_CHAT_DISCONNECTED_LIST: "false"
+      # Chat logging
+      CHAT_LOG_SECRET: "${CHAT_LOG_SECRET:-your-secret-token-here}"
+      # PostgreSQL database for chat logs (use DATABASE_URL or individual vars)
+      DATABASE_URL: "${DATABASE_URL:-}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_DATABASE: "${POSTGRES_DATABASE:-}"
+      POSTGRES_USER: "${POSTGRES_USER:-}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-}"
       SERVER_NAME: $SERVER_NAME
       SERVER_MOTD: $SERVER_MOTD
       SERVER_ICON: $SERVER_ICON

@@ -292,6 +292,18 @@ export const EnvironmentVariables = z.object({
         .or(z.string().max(0))
         .transform((val) => toNumber(val, 20 * 1024 * 1024)) // Default to 20 MB
         .describe("The maximum size of a gRPC message. Defaults to 20 MB."),
+
+    // Chat logging
+    CHAT_LOG_SECRET: z.string().optional().describe("Secret token for authenticating chat log requests"),
+
+    // PostgreSQL database connection (can use DATABASE_URL or individual vars)
+    DATABASE_URL: z.string().optional().describe("PostgreSQL connection string (postgresql://user:pass@host:port/db)"),
+    POSTGRES_URL: z.string().optional().describe("PostgreSQL connection string (alternative to DATABASE_URL)"),
+    POSTGRES_HOST: z.string().optional().describe("PostgreSQL database host"),
+    POSTGRES_PORT: PositiveIntAsString.optional().transform((val) => toNumber(val, 5432)),
+    POSTGRES_DATABASE: z.string().optional().describe("PostgreSQL database name"),
+    POSTGRES_USER: z.string().optional().describe("PostgreSQL database user"),
+    POSTGRES_PASSWORD: z.string().optional().describe("PostgreSQL database password"),
 });
 
 export type EnvironmentVariables = z.infer<typeof EnvironmentVariables>;

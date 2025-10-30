@@ -8,11 +8,12 @@ import { Application } from "express";
 import Debug from "debug";
 import { AuthTokenData, jwtTokenManager } from "../services/JWTTokenManager";
 import { openIDClient } from "../services/OpenIDClient";
-import { DISABLE_ANONYMOUS, FRONT_URL, MATRIX_PUBLIC_URI, PUSHER_URL } from "../enums/EnvironmentVariable";
+import { DISABLE_ANONYMOUS, FRONT_URL, MATRIX_PUBLIC_URI } from "../enums/EnvironmentVariable";
 import { adminService } from "../services/AdminService";
 import { validateQuery } from "../services/QueryValidator";
 import { VerifyDomainService } from "../services/verifyDomain/VerifyDomainService";
 import { matrixProvider } from "../services/MatrixProvider";
+import { postgresClient } from "../services/PostgresClient";
 import { BaseHttpController } from "./BaseHttpController";
 
 const debug = Debug("pusher:requests");
@@ -309,15 +310,15 @@ export class AuthenticateController extends BaseHttpController {
             if (!email) {
                 throw new Error("No email in the response");
             }
-            
+
             // Debug logging for Slack OAuth
             console.log("Slack userInfo received:", {
                 email: userInfo.email,
                 username: userInfo.username,
                 sub: userInfo.sub,
-                allClaims: Object.keys(userInfo)
+                allClaims: Object.keys(userInfo),
             });
-            
+
             const authToken = jwtTokenManager.createAuthToken(
                 email,
                 userInfo?.access_token,
@@ -326,6 +327,17 @@ export class AuthenticateController extends BaseHttpController {
                 userInfo?.tags,
                 email ? matrixProvider.getBareMatrixIdFromEmail(email) : undefined
             );
+
+            // Upsert user to database
+            if (userInfo.sub) {
+                postgresClient
+                    .upsertUser(
+                        userInfo.sub, // Slack user ID
+                        userInfo.username,
+                        userInfo.email
+                    )
+                    .catch((e: unknown) => console.error("[AuthenticateController] Failed to upsert user:", e));
+            }
 
             // Matrix SSO redirect disabled - skip directly to play redirect
 
