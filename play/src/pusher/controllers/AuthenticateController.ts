@@ -309,6 +309,15 @@ export class AuthenticateController extends BaseHttpController {
             if (!email) {
                 throw new Error("No email in the response");
             }
+            
+            // Debug logging for Slack OAuth
+            console.log("Slack userInfo received:", {
+                email: userInfo.email,
+                username: userInfo.username,
+                sub: userInfo.sub,
+                allClaims: Object.keys(userInfo)
+            });
+            
             const authToken = jwtTokenManager.createAuthToken(
                 email,
                 userInfo?.access_token,
@@ -318,32 +327,7 @@ export class AuthenticateController extends BaseHttpController {
                 email ? matrixProvider.getBareMatrixIdFromEmail(email) : undefined
             );
 
-            const matrixPublicUri = userInfo.matrix_url ?? MATRIX_PUBLIC_URI;
-
-            // If Matrix is configured, we need to get an access token for the Synapse server
-            if (matrixPublicUri) {
-                // TODO: check Matrix server login parameters to be sure we can connect
-
-                const matrixCallbackUrl = new URL("/matrix-callback", PUSHER_URL).toString();
-                let redirectPath = "/_matrix/client/v3/login/sso/redirect";
-                if (userInfo.matrix_identity_provider) {
-                    redirectPath += "/" + userInfo.matrix_identity_provider;
-                }
-                const matrixRedirectUrl = new URL(redirectPath, matrixPublicUri);
-                matrixRedirectUrl.searchParams.append("redirectUrl", matrixCallbackUrl);
-
-                // Note: the authToken cannot be saved in a cookie because sometimes, it can be pretty large (>4kB)
-                // Therefore, we use localStorage to store it. So we need to render an HTML page with a script that will
-                // save the token in localStorage
-                const html = Mustache.render(this.redirectToMatrixFile, {
-                    authToken,
-                    matrixRedirectUrl: matrixRedirectUrl.toString(),
-                });
-
-                res.type("html").send(html);
-
-                return;
-            }
+            // Matrix SSO redirect disabled - skip directly to play redirect
 
             res.clearCookie("playUri");
             // FIXME: possibly redirect to Admin instead.

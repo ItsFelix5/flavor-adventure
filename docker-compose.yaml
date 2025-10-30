@@ -78,14 +78,15 @@ services:
       TURN_PASSWORD: ""
       MAX_PER_GROUP: "$MAX_PER_GROUP"
       MAX_USERNAME_LENGTH: "$MAX_USERNAME_LENGTH"
-      OPENID_CLIENT_ID: authorization-code-client-id
-      OPENID_CLIENT_SECRET: authorization-code-client-secret
-      OPENID_CLIENT_ISSUER: http://oidc.workadventure.localhost
+      OPENID_CLIENT_ID: "$OPENID_CLIENT_ID"
+      OPENID_CLIENT_SECRET: "$OPENID_CLIENT_SECRET"
+      OPENID_CLIENT_ISSUER: "https://slack.com"
       OPENID_PROFILE_SCREEN_PROVIDER: $OPENID_PROFILE_SCREEN_PROVIDER
-      OPENID_SCOPE: profile openid email tags-scope
+      OPENID_SCOPE: "openid email profile"
       OPENID_PROMPT: $OPENID_PROMPT
-      OPENID_USERNAME_CLAIM: $OPENID_USERNAME_CLAIM
+      OPENID_USERNAME_CLAIM: "given_name"
       OPENID_LOCALE_CLAIM: $OPENID_LOCALE_CLAIM
+      OPENID_WOKA_NAME_POLICY: "force_opid"
       OPENID_LOGOUT_REDIRECT_URL: "$OPENID_LOGOUT_REDIRECT_URL"
 
       SECRET_KEY: "$SECRET_KEY"
@@ -93,16 +94,16 @@ services:
       ADMIN_API_TOKEN: "$ADMIN_API_TOKEN"
       MAP_STORAGE_API_TOKEN: "FFVSGBSGBSGFB23SFGBSFG4BS"
       API_URL: back:50051
-      DISABLE_ANONYMOUS: $DISABLE_ANONYMOUS
+      DISABLE_ANONYMOUS: true
       #Map editor
       PUBLIC_MAP_STORAGE_URL: "http://map-storage.workadventure.localhost"
       INTERNAL_MAP_STORAGE_URL: "http://map-storage:3000"
       ENABLE_OPENAPI_ENDPOINT: "true"
       START_ROOM_URL: "$START_ROOM_URL"
-      ENABLE_CHAT: "$ENABLE_CHAT"
-      ENABLE_CHAT_UPLOAD: "$ENABLE_CHAT_UPLOAD"
-      ENABLE_CHAT_ONLINE_LIST: "$ENABLE_CHAT_ONLINE_LIST"
-      ENABLE_CHAT_DISCONNECTED_LIST: "$ENABLE_CHAT_DISCONNECTED_LIST"
+      ENABLE_CHAT: "false"
+      ENABLE_CHAT_UPLOAD: "false"
+      ENABLE_CHAT_ONLINE_LIST: "false"
+      ENABLE_CHAT_DISCONNECTED_LIST: "false"
       SERVER_NAME: $SERVER_NAME
       SERVER_MOTD: $SERVER_MOTD
       SERVER_ICON: $SERVER_ICON
@@ -148,12 +149,12 @@ services:
       # Google drive picker
       GOOGLE_DRIVE_PICKER_CLIENT_ID: "$GOOGLE_DRIVE_PICKER_CLIENT_ID"
       GOOGLE_DRIVE_PICKER_APP_ID: "$GOOGLE_DRIVE_PICKER_APP_ID"
-      #Chat
-      MATRIX_API_URI: http://synapse:8008/
-      MATRIX_PUBLIC_URI: http://matrix.workadventure.localhost
-      MATRIX_ADMIN_USER: admin
-      MATRIX_ADMIN_PASSWORD: MySecretPassword
-      MATRIX_DOMAIN: matrix.workadventure.localhost
+      #Chat - DISABLED
+      MATRIX_API_URI: ""
+      MATRIX_PUBLIC_URI: ""
+      MATRIX_ADMIN_USER: ""
+      MATRIX_ADMIN_PASSWORD: ""
+      MATRIX_DOMAIN: ""
       # oEmbed providers
       EMBEDLY_KEY: "$EMBEDLY_KEY"
       # Map editor restrictions (allow all users when OIDC is enabled by default)

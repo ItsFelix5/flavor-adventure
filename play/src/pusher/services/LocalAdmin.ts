@@ -77,8 +77,9 @@ class LocalAdmin implements AdminInterface {
             canEdit = true;
         }
 
-        let isCharacterTexturesValid = true;
-
+        // First-time users with no textures should see character selection
+        let isCharacterTexturesValid = characterTextureIds.length > 0;
+        
         const characterTextures = await localWokaService.fetchWokaDetails(characterTextureIds);
         if (characterTextures === undefined) {
             isCharacterTexturesValid = false;
