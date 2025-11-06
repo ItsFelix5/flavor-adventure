@@ -3,6 +3,7 @@ import type { Client, IntrospectionResponse, OpenIDCallbackChecks } from "openid
 import { Issuer, generators, custom } from "openid-client";
 import { v4 } from "uuid";
 import type { Request, Response } from "express";
+import axios from "axios";
 import {
     OPID_CLIENT_ID,
     OPID_CLIENT_SECRET,
@@ -32,26 +33,29 @@ class OpenIDClient {
         if (!this.issuerPromise) {
             this.issuerPromise = Issuer.discover(OPID_CLIENT_ISSUER)
                 .then((issuer) => {
-                    return new issuer.Client({
+                    const client = new issuer.Client({
                         client_id: OPID_CLIENT_ID,
                         client_secret: OPID_CLIENT_SECRET,
                         redirect_uris: [OPID_CLIENT_REDIRECT_URL],
                         response_types: ["code"],
                     });
+                    client[custom.clock_tolerance] = 10;
+                    return client;
                 })
                 .catch((e) => {
-                    // If this fails, let's try with only the openid-configuration configuration.
                     console.info(
                         "Failed to fetch OIDC configuration for both .well-known/openid-configuration and oauth-authorization-server. Trying .well-known/openid-configuration only."
                     );
                     this.issuerPromise = Issuer.discover(OPID_CLIENT_ISSUER + "/.well-known/openid-configuration")
                         .then((issuer) => {
-                            return new issuer.Client({
+                            const client = new issuer.Client({
                                 client_id: OPID_CLIENT_ID,
                                 client_secret: OPID_CLIENT_SECRET,
                                 redirect_uris: [OPID_CLIENT_REDIRECT_URL],
                                 response_types: ["code"],
                             });
+                            client[custom.clock_tolerance] = 10;
+                            return client;
                         })
                         .catch((e) => {
                             this.issuerPromise = null;
@@ -72,25 +76,47 @@ class OpenIDClient {
         providerId: string | undefined,
         providerScopes: string[] | undefined
     ): Promise<string> {
+        const isSlack = OPID_CLIENT_ISSUER.includes("slack.com");
+        
+        if (isSlack) {
+            const state = v4();
+            res.cookie("oidc_state", state, {
+                httpOnly: true,
+                secure: req.secure,
+            });
+            
+            res.cookie("code_verifier", this.encrypt("slack_oauth"), {
+                httpOnly: true,
+                secure: req.secure,
+            });
+
+            const userScopes = providerScopes?.join(",") || "identity.basic,identity.email,identity.avatar,identity.team";
+            const authUrl = new URL("https://slack.com/oauth/v2/authorize");
+            authUrl.searchParams.set("client_id", OPID_CLIENT_ID);
+            authUrl.searchParams.set("user_scope", userScopes);
+            authUrl.searchParams.set("state", state);
+            authUrl.searchParams.set("redirect_uri", OPID_CLIENT_REDIRECT_URL);
+
+            console.info("Slack OAuth authorization URL generated with user_scope:", userScopes);
+
+            return Promise.resolve(authUrl.toString());
+        }
+
         return this.initClient().then((client) => {
             if (!OPID_SCOPE.includes("email") || !OPID_SCOPE.includes("openid")) {
                 throw new Error("Invalid scope, 'email' and 'openid' are required in OPID_SCOPE.");
             }
 
             const code_verifier = generators.codeVerifier();
-            // store the code_verifier in your framework's session mechanism, if it is a cookie based solution
-            // it should be httpOnly (not readable by javascript) and encrypted.
             res.cookie("code_verifier", this.encrypt(code_verifier), {
-                httpOnly: true, // dont let browser javascript access cookie ever
-                secure: req.secure, // only use cookie over https
+                httpOnly: true,
+                secure: req.secure,
             });
 
-            // We also store the state in cookies. The state should not be needed, except for older OpenID client servers that
-            // don't understand PKCE
             const state = v4();
             res.cookie("oidc_state", state, {
-                httpOnly: true, // dont let browser javascript access cookie ever
-                secure: req.secure, // only use cookie over https
+                httpOnly: true,
+                secure: req.secure,
             });
 
             const code_challenge = generators.codeChallenge(code_verifier);
@@ -99,11 +125,7 @@ class OpenIDClient {
                 scope: OPID_SCOPE,
                 prompt: OPID_PROMPT,
                 state: state,
-                //nonce: nonce,
                 playUri,
-                // Whether the login was triggered by clicking on the "sign in" button (in which case the user was
-                // anonymous) or whether the login was triggered because user was not authenticated and authentication
-                // is mandatory.
                 manuallyTriggered,
                 chatRoomId,
                 providerId,
@@ -138,42 +160,143 @@ class OpenIDClient {
         const code_verifier = this.decrypt(cookies.code_verifier);
         const state = cookies.oidc_state;
 
-        return this.initClient().then((client) => {
+        return this.initClient().then(async (client) => {
             const params = client.callbackParams(fullUrl);
 
-            const checks: OpenIDCallbackChecks = {
-                code_verifier,
-            };
-
-            if (state && params.state && typeof state === "string") {
-                checks.state = state;
+            if (state && params.state && typeof state === "string" && params.state !== state) {
+                throw new Error("State mismatch");
             }
 
-            return client.callback(OPID_CLIENT_REDIRECT_URL, params, checks).then((tokenSet) => {
-                res.clearCookie("code_verifier");
-                res.clearCookie("oidc_state");
+            res.clearCookie("code_verifier");
+            res.clearCookie("oidc_state");
 
-                return client
-                    .userinfo(tokenSet, {
+            const isSlack = OPID_CLIENT_ISSUER.includes("slack.com");
+            
+            let accessToken: string;
+            let userInfoResponse: any;
+
+            if (isSlack) {
+                console.info("Detected Slack OAuth - using Slack-specific token exchange");
+                if (!params.code) {
+                    throw new Error("No authorization code received from Slack");
+                }
+                accessToken = await this.exchangeSlackCode(params.code as string);
+                console.info("Successfully exchanged Slack code for access token");
+                userInfoResponse = await this.fetchSlackUserInfo(accessToken);
+                console.info("Successfully fetched Slack user info:", { 
+                    userId: userInfoResponse.sub,
+                    email: userInfoResponse.email,
+                    name: userInfoResponse.name 
+                });
+            } else {
+                const checks: OpenIDCallbackChecks = {
+                    code_verifier,
+                };
+
+                if (state && params.state && typeof state === "string") {
+                    checks.state = state;
+                }
+
+                let tokenSet;
+                try {
+                    tokenSet = await client.callback(OPID_CLIENT_REDIRECT_URL, params, checks);
+                } catch (error) {
+                    if (error instanceof Error && error.message.includes("id_token")) {
+                        console.info("ID token not found in response - attempting OAuth 2.0 flow without ID token validation");
+                        tokenSet = await client.oauthCallback(OPID_CLIENT_REDIRECT_URL, params, checks);
+                    } else {
+                        throw error;
+                    }
+                }
+
+                if (!tokenSet.access_token) {
+                    throw new Error("No access_token in TokenSet from OAuth provider");
+                }
+
+                accessToken = tokenSet.access_token;
+
+                try {
+                    userInfoResponse = await client.userinfo(accessToken, {
                         params: {
                             playUri,
                         },
-                    })
-                    .then((res) => {
-                        return {
-                            ...res,
-                            email: res.email ?? "",
-                            sub: res.sub,
-                            access_token: tokenSet.access_token ?? "",
-                            username: res[OPID_USERNAME_CLAIM] as string,
-                            locale: res[OPID_LOCALE_CLAIM] as string,
-                            tags: res[OPID_TAGS_CLAIM] as string[],
-                            matrix_url: res.matrix_url as string | undefined,
-                            matrix_identity_provider: res.matrix_identity_provider as string | undefined,
-                        };
                     });
-            });
+                } catch (error) {
+                    console.warn("Standard userinfo endpoint not available:", error);
+                    userInfoResponse = {};
+                }
+            }
+
+            return {
+                ...userInfoResponse,
+                email: userInfoResponse.email ?? "",
+                sub: userInfoResponse.sub ?? userInfoResponse.user_id ?? "",
+                access_token: accessToken,
+                username: userInfoResponse[OPID_USERNAME_CLAIM] as string ?? userInfoResponse.name ?? userInfoResponse.real_name ?? "",
+                locale: userInfoResponse[OPID_LOCALE_CLAIM] as string ?? userInfoResponse.locale ?? "",
+                tags: userInfoResponse[OPID_TAGS_CLAIM] as string[] ?? [],
+                matrix_url: userInfoResponse.matrix_url as string | undefined,
+                matrix_identity_provider: userInfoResponse.matrix_identity_provider as string | undefined,
+            };
         });
+    }
+
+    private async exchangeSlackCode(code: string): Promise<string> {
+        try {
+            const response = await axios.post(
+                "https://slack.com/api/oauth.v2.access",
+                new URLSearchParams({
+                    code,
+                    client_id: OPID_CLIENT_ID,
+                    client_secret: OPID_CLIENT_SECRET,
+                    redirect_uri: OPID_CLIENT_REDIRECT_URL,
+                }),
+                {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                }
+            );
+
+            if (!response.data.ok) {
+                throw new Error(`Slack OAuth error: ${response.data.error}`);
+            }
+
+            return response.data.authed_user.access_token;
+        } catch (error) {
+            console.error("Error exchanging Slack authorization code:", error);
+            throw error;
+        }
+    }
+
+    private async fetchSlackUserInfo(accessToken: string): Promise<any> {
+        try {
+            const response = await axios.get("https://slack.com/api/users.identity", {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+
+            if (!response.data.ok) {
+                throw new Error(`Slack API error: ${response.data.error}`);
+            }
+
+            const { user, team } = response.data;
+            
+            return {
+                sub: user.id,
+                user_id: user.id,
+                name: user.name,
+                email: user.email,
+                real_name: user.real_name || user.name,
+                locale: user.locale || "en-US",
+                team_id: team?.id,
+                team_name: team?.name,
+            };
+        } catch (error) {
+            console.error("Error fetching Slack user info:", error);
+            throw error;
+        }
     }
 
     public logoutUser(token: string): Promise<void> {
