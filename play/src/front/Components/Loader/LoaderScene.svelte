@@ -3,7 +3,7 @@
     import { loaderProgressStore } from "../../Stores/LoaderStore";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import bgMap from "../images/map-exemple.png";
-    import defaultLoader from "../images/Workadventure.gif";
+    const defaultLoader = "/static/images/Workadventure.gif";
 
     const logo = gameManager.currentStartedRoom.loadingLogo ?? defaultLoader;
     const sceneBg = gameManager.currentStartedRoom.backgroundSceneImage ?? bgMap;
@@ -24,7 +24,7 @@
             {/if}
             -->
             <div class="mb-4 w-full flex justify-center">
-                <img draggable="false" src={logo} class="max-h-10 px-4" alt="Logo loading screen" />
+                <img draggable="false" src={logo} class="max-h-50 px-5" alt="Logo loading screen" />
             </div>
             <div class="w-full h-3 bg-contrast py-[2px]">
                 <div

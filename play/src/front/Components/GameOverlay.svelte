@@ -26,7 +26,7 @@
     import LoaderScene from "./Loader/LoaderScene.svelte";
     import EnableCameraScene from "./EnableCamera/EnableCameraScene.svelte";
     import bgMap from "./images/map-exemple.png";
-    import defaultLoader from "./images/Workadventure.gif";
+    const defaultLoader = "/static/images/Workadventure.gif";
     import GlobalCommunicationModal from "./Modal/GlobalCommunicationModal.svelte";
     import NavigationModal from "./Modal/NavigationModal.svelte";
     import Calendar from "./Calendar/Calendar.svelte";

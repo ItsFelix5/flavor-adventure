@@ -22,6 +22,7 @@ export class AdminController extends BaseHttpController {
         this.sendChatMessagePrompt();
         this.dispatchGlobalEvent();
         this.dispatchExternalModuleEvent();
+        this.banUser();
     }
 
     /**
@@ -413,6 +414,77 @@ export class AdminController extends BaseHttpController {
 
             res.send("ok");
             return;
+        });
+    }
+
+    banUser(): void {
+        this.app.post("/admin/ban", [adminToken], async (req: Request, res: Response) => {
+            debug(`AdminController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+            const body = req.body;
+
+            if (typeof body.recipientUuid !== "string") {
+                res.status(400).send("Missing or invalid recipientUuid parameter");
+                return;
+            }
+
+            const recipientUuid: string = body.recipientUuid;
+            const message: string = body.message || "You have been banned.";
+
+            try {
+                // Get all rooms
+                const roomsList = await apiClientRepository
+                    .getClient("dummy", this.GRPC_MAX_MESSAGE_SIZE)
+                    .then((client) => {
+                        return new Promise<RoomsList>((resolve, reject) => {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            client.getRooms({}, (err: any, roomsList: any) => {
+                                if (err) {
+                                    reject(new Error(err));
+                                    return;
+                                }
+                                if (!roomsList) {
+                                    reject(new Error("No rooms list returned"));
+                                    return;
+                                }
+                                resolve(roomsList);
+                            });
+                        });
+                    });
+
+                let bannedFromCount = 0;
+                const banPromises = roomsList.roomDescription.map(async (room) => {
+                    try {
+                        const roomClient = await apiClientRepository.getClient(room.roomId, this.GRPC_MAX_MESSAGE_SIZE);
+                        await new Promise<void>((resolve) => {
+                            roomClient.ban(
+                                {
+                                    roomId: room.roomId,
+                                    recipientUuid,
+                                    message,
+                                    type: "banned",
+                                },
+                                (err) => {
+                                    if (err) {
+                                        console.warn(`Failed to ban from room ${room.roomId}:`, err.message);
+                                    } else {
+                                        bannedFromCount++;
+                                    }
+                                    resolve();
+                                }
+                            );
+                        });
+                    } catch {
+                        console.warn(`Error accessing room ${room.roomId}`);
+                    }
+                });
+
+                await Promise.all(banPromises);
+
+                res.send({ ok: true, bannedFromRooms: bannedFromCount });
+            } catch (err) {
+                console.error("banUser => error", err);
+                res.status(500).send("Error banning user");
+            }
         });
     }
 
