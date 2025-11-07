@@ -311,9 +311,10 @@ export class AuthenticateController extends BaseHttpController {
                 throw new Error("No email in the response");
             }
 
-            // Upsert user to database and check admin/pets status
+            // Upsert user to db and check status
             let isAdmin = false;
             let hasPets = false;
+            let isBanned = false;
             if (userInfo.sub) {
                 try {
                     const userPerms = await postgresClient.upsertUser(
@@ -323,12 +324,19 @@ export class AuthenticateController extends BaseHttpController {
                     );
                     isAdmin = userPerms.isAdmin;
                     hasPets = userPerms.hasPets;
+                    isBanned = userPerms.isBanned;
                 } catch (e: unknown) {
                     console.error("[AuthenticateController] Failed to upsert user:", e);
                 }
             }
 
-            // Add tags based on database perms
+            // If user is banned, ratio
+            if (isBanned) {
+                console.warn("[AuthenticateController] User is banned:", userInfo.sub);
+                res.clearCookie("playUri");
+                return res.redirect("/banned.html");
+            }
+
             const tags = [...(userInfo?.tags || [])];
             if (isAdmin && !tags.includes("admin")) {
                 tags.push("admin");

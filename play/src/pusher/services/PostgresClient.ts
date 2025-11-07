@@ -91,9 +91,9 @@ class PostgresClient {
         slackId: string,
         givenName?: string,
         email?: string
-    ): Promise<{ isAdmin: boolean; hasPets: boolean }> {
+    ): Promise<{ isAdmin: boolean; hasPets: boolean; isBanned: boolean }> {
         if (!this.isEnabled()) {
-            return { isAdmin: false, hasPets: false };
+            return { isAdmin: false, hasPets: false, isBanned: false };
         }
 
         try {
@@ -115,10 +115,10 @@ class PostgresClient {
             const hasPets = user?.has_unlocked_pets || false;
 
             console.info("[PostgresClient] User upserted:", slackId, { isAdmin, isBanned, hasPets });
-            return { isAdmin, hasPets };
+            return { isAdmin, hasPets, isBanned };
         } catch (error) {
             console.error("[PostgresClient] Failed to upsert user:", error);
-            return { isAdmin: false, hasPets: false };
+            return { isAdmin: false, hasPets: false, isBanned: false };
         }
     }
 
