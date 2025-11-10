@@ -36,11 +36,14 @@
     function goToCourtyard() {
         const roomId = gameManager.getCurrentGameScene().room.id;
 
-        // Extract maps host from current room URL
+        // Extract host from current room URL
         const match = roomId.match(/_\/global\/([^/]+)\//);
-        let mapsHost = match && match[1] ? match[1] : "maps.workadventure.localhost";
-        // Ensure we use the maps host, not play host
-        mapsHost = mapsHost.replace(/^play\./, "maps.");
+        let mapsHost = match && match[1] ? match[1] : window.location.host;
+
+        // In dev: use maps.workadventure.localhost, in prod: use same host
+        if (mapsHost.includes("workadventure.localhost")) {
+            mapsHost = mapsHost.replace(/^play\./, "maps.");
+        }
 
         console.log("[Navigation] Going to courtyard");
 
@@ -57,9 +60,14 @@
         }
 
         const roomId = gameManager.getCurrentGameScene().room.id;
-        // Extract play host from current room URL
+        // Extract host from current room URL
         const match = roomId.match(/_\/global\/([^/]+)\//);
-        const playHost = match && match[1] ? match[1].replace(/^maps\./, "play.") : "play.workadventure.localhost";
+        let playHost = match && match[1] ? match[1] : window.location.host;
+
+        // In dev: replace maps. with play., in prod: use same host
+        if (playHost.includes("workadventure.localhost")) {
+            playHost = playHost.replace(/^maps\./, "play.");
+        }
 
         console.log("[Navigation] Going home");
 
@@ -72,9 +80,14 @@
         const meetingId = Math.random().toString(36).substring(2, 12);
 
         const roomId = gameManager.getCurrentGameScene().room.id;
-        // Extract play host from current room URL
+        // Extract host from current room URL
         const match = roomId.match(/_\/global\/([^/]+)\//);
-        const playHost = match && match[1] ? match[1].replace(/^maps\./, "play.") : "play.workadventure.localhost";
+        let playHost = match && match[1] ? match[1] : window.location.host;
+
+        // In dev: replace maps. with play., in prod: use same host
+        if (playHost.includes("workadventure.localhost")) {
+            playHost = playHost.replace(/^maps\./, "play.");
+        }
 
         console.log("[Navigation] Starting meeting with ID:", meetingId);
 
@@ -94,9 +107,14 @@
         }
 
         const roomId = gameManager.getCurrentGameScene().room.id;
-        // Extract play host from current room URL
+        // Extract host from current room URL
         const match = roomId.match(/_\/global\/([^/]+)\//);
-        const playHost = match && match[1] ? match[1].replace(/^maps\./, "play.") : "play.workadventure.localhost";
+        let playHost = match && match[1] ? match[1] : window.location.host;
+
+        // In dev: replace maps. with play., in prod: use same host
+        if (playHost.includes("workadventure.localhost")) {
+            playHost = playHost.replace(/^maps\./, "play.");
+        }
 
         console.log("[Navigation] Joining meeting");
 
