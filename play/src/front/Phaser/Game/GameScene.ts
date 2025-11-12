@@ -445,15 +445,39 @@ export class GameScene extends DirtyScene {
         this.sound.pauseOnBlur = false;
 
         this.load.on(FILE_LOAD_ERROR, (file: { src: string }) => {
-            // If we happen to be in HTTP and we are trying to load a URL in HTTPS only (dev vs prod)
+            // If we are on HTTPS and trying to load a HTTP map URL (mixed content error)
             if (
-                window.location.protocol === "http:" &&
+                window.location.protocol === "https:" &&
                 file.src === this.mapUrlFile &&
                 file.src.startsWith("http:") &&
                 this.originalMapUrl === undefined
             ) {
+                const base = new URL(window.location.href);
+                base.pathname = "";
+                const url = new URL(file.src, base.toString());
+                const host = url.host.split(":")[0];
+                if (!(host === "127.0.0.1" || host === "localhost" || host.endsWith(".localhost"))) {
+                    this.originalMapUrl = this.mapUrlFile;
+                    this.mapUrlFile = this.mapUrlFile.replace("http://", "https://");
+                    this.load.tilemapTiledJSON(this.mapUrlFile, this.mapUrlFile);
+                    this.load.on(
+                        "filecomplete-tilemapJSON-" + this.mapUrlFile,
+                        (key: string, type: string, data: unknown) => {
+                            this.onMapLoad(data).catch((e) => console.error(e));
+                        }
+                    );
+                    return;
+                }
+            }
+            // If we happen to be in HTTP and we are trying to load a URL in HTTPS only (dev vs prod)
+            if (
+                window.location.protocol === "http:" &&
+                file.src === this.mapUrlFile &&
+                file.src.startsWith("https:") &&
+                this.originalMapUrl === undefined
+            ) {
                 this.originalMapUrl = this.mapUrlFile;
-                this.mapUrlFile = this.mapUrlFile.replace("http://", "https://");
+                this.mapUrlFile = this.mapUrlFile.replace("https://", "http://");
                 this.load.tilemapTiledJSON(this.mapUrlFile, this.mapUrlFile);
                 this.load.on(
                     "filecomplete-tilemapJSON-" + this.mapUrlFile,
@@ -489,7 +513,7 @@ export class GameScene extends DirtyScene {
                 // In this case, we check in the cache to see if the map is here and trigger the event manually.
                 if (this.cache.tilemap.exists(this.mapUrlFile)) {
                     const data = this.cache.tilemap.get(this.mapUrlFile);
-                    this.onMapLoad(data.data).catch((e) => console.error(e));
+                    this.onMapLoad(data).catch((e) => console.error(e));
                 }
                 return;
             }

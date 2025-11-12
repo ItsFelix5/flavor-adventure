@@ -124,10 +124,23 @@ class App {
                 ".woff2",
                 ".map",
                 ".gif",
+                ".tmj",
+                ".tsx",
+                ".ogg",
+                ".jpg",
+                ".jpeg",
             ],
             etag: true,
             maxAge: "15d",
         };
+
+        this.app.use(
+            "/assets",
+            express.static("/usr/src/app/maps/assets", {
+                ...staticOptions,
+                maxAge: "1d",
+            })
+        );
 
         this.app.use(
             "assets",
@@ -153,7 +166,6 @@ class App {
             })
         );
 
-        // Serve maps statically for production
         this.app.use(
             "/flavor",
             express.static("/usr/src/app/maps/flavor", {
