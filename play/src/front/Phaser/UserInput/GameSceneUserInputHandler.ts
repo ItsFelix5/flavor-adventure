@@ -6,7 +6,6 @@ import type { UserInputHandlerInterface } from "../../Interfaces/UserInputHandle
 import type { GameScene } from "../Game/GameScene";
 import { mapEditorModeStore } from "../../Stores/MapEditorStore";
 import { isActivatable } from "../Game/ActivatableInterface";
-import { mapManagerActivated } from "../../Stores/MenuStore";
 import { Emoji } from "../../Stores/Utils/emojiSchema";
 import { emoteDataStore, emoteStore } from "../../Stores/EmoteStore";
 import { analyticsClient } from "../../Administration/AnalyticsClient";
@@ -175,8 +174,7 @@ export class GameSceneUserInputHandler implements UserInputHandlerInterface {
         this.gameScene.getMapEditorModeManager()?.handleKeyDownEvent(event);
         switch (event.code) {
             case "KeyE": {
-                if (get(mapManagerActivated) == false) return event;
-                mapEditorModeStore.switchMode(!get(mapEditorModeStore));
+                // for exploring map (disabled)
                 break;
             }
             case "KeyR": {

@@ -1,18 +1,18 @@
 /// <reference path="../node_modules/@workadventure/iframe-api-typings/iframe_api.d.ts" />
 
-console.log('[Flavor] Redirect script loaded');
+console.log('loaded scripts');
 
 WA.room.onEnterZone('redirectToOffice', () => {
-    console.log('[Flavor] Entered redirect zone');
+    console.log('triggered redirectToOffice zone');
     
     const slackId = WA.player.slackId;
-    console.log('[Flavor] Slack ID:', slackId);
+    console.log('Slack ID:', slackId);
     
     if (slackId) {
         const targetUrl = `/_/global/play.workadventure.localhost/slack/${slackId}`;
-        console.log('[Flavor] Redirecting to personalized house:', targetUrl);
+        console.log('Sending to house', targetUrl);
         WA.nav.goToRoom(targetUrl);
     } else {
-        console.error('[Flavor] No Slack ID available');
+        console.error('No Slack ID available');
     }
 });
