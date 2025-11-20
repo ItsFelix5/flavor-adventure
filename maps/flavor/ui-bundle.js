@@ -20,7 +20,7 @@ WA.onInit().then(async () => {
     
     // serve on /unique to avoid player overlap
     const currentRoom = WA.room.id;
-    const isUniqueRoom = currentRoom.includes('/unique/');
+    const isUniqueRoom = currentRoom.includes('/unique'); // Matches /unique/ and /unique-ui/
     
     if (!isUniqueRoom) {
         const uniqueId = crypto.randomUUID();
