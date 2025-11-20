@@ -4,7 +4,7 @@ import { postgresClient } from "../services/PostgresClient";
 import { CHAT_LOG_SECRET } from "../enums/EnvironmentVariable";
 
 const ChatLogSchema = z.object({
-    type: z.enum(["matrix", "proximity"]),
+    type: z.enum(["matrix", "proximity", "say"]),
     message: z.string().min(1),
     author: z.string().optional(), // sender ID
     playerName: z.string().optional(),
