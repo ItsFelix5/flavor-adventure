@@ -36,36 +36,23 @@
             transform-origin: top left;
         }
         
-        #scroll-indicator {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 12px;
-            z-index: 1000;
-        }
+        
     </style>
 </head>
 <body>
-    <div id="scroll-indicator">Scroll: 0%</div>
     <div id="content-iframe">
         <div id="scrollable-content">Loading, if you can read this message @euanRipper on slack</div>
     </div>
     
     <script>
         const contentDiv = document.getElementById('scrollable-content');
-        const indicator = document.getElementById('scroll-indicator');
         const TILE_SIZE = 32;
         let PLAYER_START_Y = 0; // Will be set on first movement
         let targetScroll = 0;
         let currentScroll = 0;
         let initialScrollDone = false;
         
-        // Listen for messages from the parent (WorkAdventure)
+        // Listen for messages from parent 
         window.addEventListener('message', (event) => {
             console.log('Received message:', event.data);
             
@@ -80,7 +67,7 @@
             if (event.data && event.data.type === 'hasPlayerMoved' && event.data.data) {
                 const playerY = event.data.data.y;
                 
-                // Initialize on first movement - set baseline from actual spawn position
+                // Init on first move because spawn position can change
                 if (!initialScrollDone) {
                     console.log(`First movement - Player spawned at Y: ${Math.round(playerY)}`);
                     // Set the baseline so content starts at top (0 offset) from current position
@@ -93,7 +80,7 @@
                     return;
                 }
                 
-                // Move content 1:1 with player offset from spawn position
+                
                 const relativeY = playerY - PLAYER_START_Y;
                 targetScroll = relativeY*1;
                 
@@ -105,8 +92,6 @@
         function updateScroll() {
             contentDiv.style.transform = `translateY(${targetScroll}px)`;
             contentDiv.style.transition = 'transform 0.1s linear';
-            
-            indicator.textContent = `Offset: ${Math.round(targetScroll)}px`;
         }
         
     
@@ -154,6 +139,7 @@
                         </p>
                     
                     </section>
+                    <h3 style="color: #ff6b35; margin-bottom: 15px;"> By entering you agree to our Code of Conduct</h3>
                     <p>The code of conduct is summarised here</p>
                     <ul>
                     <li>Be friendly and welcoming</li>

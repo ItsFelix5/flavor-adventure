@@ -8,6 +8,8 @@ export class DynamicMapController {
         app.get("/slack/:slackId", this.serveHouse.bind(this));
         // meetings at /meet/:meetId
         app.get("/meet/:meetId", this.serveMeeting.bind(this));
+        // unique UI maps at /flavor/unique/:uuid/UI.tmj
+        app.get("/flavor/unique/:uuid/UI.tmj", this.serveUniqueUI.bind(this));
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,7 +77,7 @@ export class DynamicMapController {
                 console.warn(`[DynamicMapController] Could not fetch user: ${error}`);
             }
 
-            // Replace "Hello World" text object with display name
+            // Replace "Hello World" text object with display name (houses)
             if (mapData.layers) {
                 for (const layer of mapData.layers) {
                     if (layer.type === "objectgroup" && layer.objects) {
@@ -93,8 +95,7 @@ export class DynamicMapController {
             // Use X-Forwarded-Proto if available (for reverse proxies), otherwise use req.protocol
             const protocol = req.get("X-Forwarded-Proto") || req.protocol;
             const requestHost = req.get("host") || "";
-            // In dev: use maps.workadventure.localhost
-            // In prod: use same host (flavor-adventure.hackclub.com serves maps via /flavor)
+
             const mapsHost = requestHost.includes("workadventure.localhost")
                 ? requestHost.replace(/^play\./, "maps.")
                 : requestHost;
@@ -232,6 +233,83 @@ export class DynamicMapController {
         } catch (error) {
             console.error("[DynamicMapController] Error serving meeting:", error);
             res.status(500).json({ error: "Failed to load meeting map" });
+        }
+    }
+
+    private serveUniqueUI(req: Request, res: Response) {
+        const uuid = req.params.uuid;
+        console.log(`[DynamicMapController] Serving unique UI for UUID: ${uuid}`);
+
+        try {
+            const uiPath = "/usr/src/app/maps/flavor/UI.tmj";
+            const uiContent = fs.readFileSync(uiPath, "utf-8");
+
+            // Parse and rewrite tileset/image paths to absolute URLs
+            const mapData = JSON.parse(uiContent);
+
+            // Build the maps server URL from the request
+            const protocol = req.get("X-Forwarded-Proto") || req.protocol;
+            const requestHost = req.get("host") || "";
+            const mapsHost = requestHost.includes("workadventure.localhost")
+                ? requestHost.replace(/^play\./, "maps.")
+                : requestHost;
+            const mapsBaseUrl = `${protocol}://${mapsHost}/flavor`;
+
+            console.log(`[DynamicMapController] Maps base URL: ${mapsBaseUrl}`);
+
+            // Rewrite tileset images
+            if (mapData.tilesets) {
+                for (const tileset of mapData.tilesets) {
+                    if (
+                        tileset.image &&
+                        !tileset.image.startsWith("http://") &&
+                        !tileset.image.startsWith("https://")
+                    ) {
+                        const imgPath = tileset.image.replace(/^\.\.\//, "").replace(/^\.\//, "");
+                        tileset.image = `${mapsBaseUrl}/${imgPath}`;
+                    }
+                }
+            }
+
+            // Rewrite properties (mapImage, script, etc.)
+            if (mapData.properties) {
+                for (const prop of mapData.properties) {
+                    if (
+                        prop.name === "mapImage" &&
+                        prop.value &&
+                        !prop.value.startsWith("http://") &&
+                        !prop.value.startsWith("https://")
+                    ) {
+                        const imgPath = prop.value.replace(/^\.\.\//, "").replace(/^\.\//, "");
+                        prop.value = `${mapsBaseUrl}/${imgPath}`;
+                    }
+
+                    if (
+                        prop.name === "script" &&
+                        prop.value &&
+                        !prop.value.startsWith("http://") &&
+                        !prop.value.startsWith("https://")
+                    ) {
+                        const scriptPath = prop.value.replace(/^\.\.\//, "").replace(/^\.\//, "");
+                        prop.value = `${mapsBaseUrl}/${scriptPath}`;
+                    }
+                }
+            }
+
+            if (mapData.layers) {
+                this.fixExitUrls(mapData.layers, mapsHost);
+            }
+
+            res.setHeader("Content-Type", "application/json");
+            // Only allow requests from the play domain
+            const origin = req.get("origin");
+            if (origin && (origin.includes("workadventure.localhost") || origin.includes("hackclub.com"))) {
+                res.setHeader("Access-Control-Allow-Origin", origin);
+            }
+            res.send(JSON.stringify(mapData));
+        } catch (error) {
+            console.error("[DynamicMapController] Error serving unique UI:", error);
+            res.status(500).json({ error: "Failed to load UI map" });
         }
     }
 }

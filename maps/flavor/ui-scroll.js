@@ -25,7 +25,12 @@ WA.onInit().then(async () => {
     if (!isUniqueRoom) {
         
         const uniqueId = crypto.randomUUID();
-        const targetRoom = currentRoom.replace('/flavor/UI.tmj', `/flavor/unique/${uniqueId}/UI.tmj`);
+        
+        // Force use of play service for dynamic unique maps
+        // Replace both the path and ensure the host in /_/global/ uses play service
+        const targetRoom = currentRoom
+            .replace('/flavor/UI.tmj', `/flavor/unique/${uniqueId}/UI.tmj`)
+            .replace(/\/_\/global\/maps\.([^\/]+)\//, '/_/global/play.$1/');
         console.log('Redirecting to unique room:', targetRoom);
         WA.nav.goToRoom(targetRoom);
         return; 
