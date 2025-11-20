@@ -10,8 +10,6 @@ WA.room.onEnterZone('redirectToOffice', () => {
     console.log('Room ID:', WA.room.id);
     
     if (slackId) {
-        let targetHost = 'flavor-adventure.hackclub.com';
-        
         try {
             // Parse the host from the current room ID (Map URL)
             // WA.room.id is typically the URL of the map file
@@ -23,15 +21,13 @@ WA.room.onEnterZone('redirectToOffice', () => {
                 host = host.replace('maps.', 'play.');
             }
             
-            targetHost = host;
-            console.log('Detected target host from room ID:', targetHost);
+            const targetUrl = `/_/global/${host}/slack/${slackId}`;
+            console.log('Detected host from room ID:', host);
+            console.log('Sending to house', targetUrl);
+            WA.nav.goToRoom(targetUrl);
         } catch (e) {
-            console.error('Error parsing room ID, defaulting to prod:', e);
+            console.error('Error parsing room ID, cannot redirect:', e);
         }
-
-        const targetUrl = `/_/global/${targetHost}/slack/${slackId}`;
-        console.log('Sending to house', targetUrl);
-        WA.nav.goToRoom(targetUrl);
     } else {
         console.error('No Slack ID available');
     }
