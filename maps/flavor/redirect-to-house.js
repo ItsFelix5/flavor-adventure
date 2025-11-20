@@ -7,21 +7,26 @@ WA.room.onEnterZone('redirectToOffice', () => {
     
     const slackId = WA.player.slackId;
     console.log('Slack ID:', slackId);
-    console.log('Current Host:', window.location.host);
-    console.log('Current Hostname:', window.location.hostname);
+    console.log('Room ID:', WA.room.id);
     
     if (slackId) {
-        // Default to the current host (safer for dev/staging/proxies)
-        let targetHost = window.location.host;
-
-        // Only force production if we are explicitly NOT on localhost/workadventure
-        // AND we want to enforce a specific domain behavior.
-        // But for now, trusting window.location.host is the safest default.
+        let targetHost = 'flavor-adventure.hackclub.com';
         
-        // If on production, ensure we use the correct domain if needed
-        // (e.g. if accessed via IP but want domain)
-        if (window.location.hostname === 'flavor-adventure.hackclub.com') {
-             targetHost = 'flavor-adventure.hackclub.com';
+        try {
+            // Parse the host from the current room ID (Map URL)
+            // WA.room.id is typically the URL of the map file
+            const roomUrl = new URL(WA.room.id);
+            let host = roomUrl.host;
+            
+            // In dev, we need to switch from maps. to play.
+            if (host.startsWith('maps.')) {
+                host = host.replace('maps.', 'play.');
+            }
+            
+            targetHost = host;
+            console.log('Detected target host from room ID:', targetHost);
+        } catch (e) {
+            console.error('Error parsing room ID, defaulting to prod:', e);
         }
 
         const targetUrl = `/_/global/${targetHost}/slack/${slackId}`;
