@@ -122,6 +122,27 @@ class PostgresClient {
         }
     }
 
+    async getUserBySlackId(slackId: string): Promise<{ givenName: string | null } | null> {
+        if (!this.isEnabled()) {
+            return null;
+        }
+
+        try {
+            const result = (await this.query(`SELECT given_name FROM users WHERE slack_id = $1`, [slackId])) as {
+                rows: Array<{ given_name: string | null }>;
+            };
+
+            if (result.rows.length === 0) {
+                return null;
+            }
+
+            return { givenName: result.rows[0].given_name };
+        } catch (error) {
+            console.error("[PostgresClient] Failed to get user:", error);
+            return null;
+        }
+    }
+
     async close(): Promise<void> {
         if (this.pool) {
             await this.pool.end();

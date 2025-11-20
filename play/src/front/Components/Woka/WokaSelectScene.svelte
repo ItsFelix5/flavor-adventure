@@ -275,9 +275,10 @@
                 class="w-full p-3 flex flex-row items-center gap-2 border-t-2 border-t-white/10"
                 style="border-top-style: solid;"
             >
-                <button class="w-full px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded" on:click={customize}>
+                <!-- Build woka hidden -->
+                <!-- <button class="w-full px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded" on:click={customize}>
                     {$LL.woka.selectWoka.customize()}
-                </button>
+                </button> -->
                 <button
                     class="selectCharacterSceneFormSubmit w-full px-4 py-3 bg-secondary text-white rounded hover:bg-secondary-600"
                     on:click={() => saveAndContinue([selectedWokaTextureId["woka"]])}

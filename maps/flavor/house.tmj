@@ -97,7 +97,7 @@
                 {
                  "name":"exitUrl",
                  "type":"string",
-                 "value":"../flavor/courtyard.tmj"
+                 "value":"..\/flavor\/courtyard.tmj"
                 }],
          "type":"tilelayer",
          "visible":true,
@@ -306,9 +306,39 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":77,
+         "name":"Name",
+         "objects":[
+                {
+                 "height":32.390625,
+                 "id":22,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "bold":true,
+                     "fontfamily":"Ubuntu Sans ExtraBold",
+                     "halign":"center",
+                     "text":"Hello World",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":140.1875,
+                 "x":553.78125,
+                 "y":210.6796875
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":76,
- "nextobjectid":20,
+ "nextlayerid":78,
+ "nextobjectid":24,
  "orientation":"orthogonal",
  "properties":[
         {
@@ -334,7 +364,7 @@
         {
          "name":"script",
          "type":"string",
-         "value":"exit-to-courtyard.js"
+         "value":"house-with-name.js"
         }],
  "renderorder":"right-down",
  "tiledversion":"1.11.2",

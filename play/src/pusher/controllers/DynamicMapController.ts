@@ -1,5 +1,6 @@
 import fs from "fs";
 import type { Application, Request, Response } from "express";
+import { postgresClient } from "../services/PostgresClient";
 
 export class DynamicMapController {
     constructor(app: Application) {
@@ -51,7 +52,7 @@ export class DynamicMapController {
         }
     }
 
-    private serveHouse(req: Request, res: Response) {
+    private async serveHouse(req: Request, res: Response) {
         const slackId = req.params.slackId;
         console.log(`[DynamicMapController] Serving house for Slack ID: ${slackId}`);
 
@@ -61,6 +62,32 @@ export class DynamicMapController {
 
             // ensure using absolute URLs
             const mapData = JSON.parse(houseContent);
+
+            // Get display name from database
+            let displayName = slackId; // fallback
+            try {
+                const user = await postgresClient.getUserBySlackId(slackId);
+                if (user && user.givenName) {
+                    displayName = user.givenName;
+                    console.log(`[DynamicMapController] Found display name: ${displayName}`);
+                }
+            } catch (error) {
+                console.warn(`[DynamicMapController] Could not fetch user: ${error}`);
+            }
+
+            // Replace "Hello World" text object with display name
+            if (mapData.layers) {
+                for (const layer of mapData.layers) {
+                    if (layer.type === "objectgroup" && layer.objects) {
+                        for (const obj of layer.objects) {
+                            if (obj.text && obj.text.text === "Hello World") {
+                                obj.text.text = displayName;
+                                console.log(`[DynamicMapController] Replaced text with: ${displayName}`);
+                            }
+                        }
+                    }
+                }
+            }
 
             // string handling to rewrite paths to absolute URLs
             // Use X-Forwarded-Proto if available (for reverse proxies), otherwise use req.protocol
@@ -119,7 +146,11 @@ export class DynamicMapController {
             }
 
             res.setHeader("Content-Type", "application/json");
-            res.setHeader("Access-Control-Allow-Origin", "*");
+            // Only allow requests from the play domain (same origin or play.* subdomain)
+            const origin = req.get("origin");
+            if (origin && (origin.includes("workadventure.localhost") || origin.includes("hackclub.com"))) {
+                res.setHeader("Access-Control-Allow-Origin", origin);
+            }
             res.send(JSON.stringify(mapData));
         } catch (error) {
             console.error("[DynamicMapController] Error serving house:", error);
@@ -192,7 +223,11 @@ export class DynamicMapController {
             }
 
             res.setHeader("Content-Type", "application/json");
-            res.setHeader("Access-Control-Allow-Origin", "*");
+            // Only allow requests from the play domain (same origin or play.* subdomain)
+            const origin = req.get("origin");
+            if (origin && (origin.includes("workadventure.localhost") || origin.includes("hackclub.com"))) {
+                res.setHeader("Access-Control-Allow-Origin", origin);
+            }
             res.send(JSON.stringify(mapData));
         } catch (error) {
             console.error("[DynamicMapController] Error serving meeting:", error);
