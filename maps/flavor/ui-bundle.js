@@ -3,7 +3,8 @@
 // ui scroll script
 
 const SPLIT_RATIO = 0.5; // TODO: set dynamically to width of screen map does not use
-const PROXY_URL = `${window.location.protocol}//${window.location.host.replace('play.', 'maps.')}/flavor/scroll-proxy.html`;
+// Will be set dynamically in WA.onInit
+let PROXY_URL = '';
 
 let website;
 let lastPlayerY = 0;
@@ -17,6 +18,36 @@ const MAP_HEIGHT = 60 * 32; // this can be modified to slow the scroll effect, b
 // TODO: not using api calls probably faster and more sensible
 WA.onInit().then(async () => {
     console.log('WA API initialized');
+    console.log('Script running on:', WA.room.id);
+    
+    // Construct PROXY_URL from WA.room.id to avoid window.location issues in sandbox
+    try {
+        // WA.room.id is typically the full URL (e.g. http://play.workadventure.localhost/.../UI.tmj)
+        
+        let protocol = 'https:';
+        let host = 'flavor-adventure.hackclub.com';
+        
+        if (WA.room.id.startsWith('http:')) {
+            protocol = 'http:';
+        }
+        
+        // Extract host
+        const match = WA.room.id.match(/\/\/([^\/]+)/);
+        if (match && match[1]) {
+            host = match[1];
+        }
+        
+        // Dev fix
+        if (host.includes('workadventure.localhost')) {
+             host = host.replace('play.', 'maps.');
+        }
+        
+        PROXY_URL = `${protocol}//${host}/flavor/scroll-proxy.html`;
+        console.log('Derived PROXY_URL:', PROXY_URL);
+    } catch (e) {
+        console.error('Failed to derive PROXY_URL from room ID:', e);
+        PROXY_URL = 'https://flavor-adventure.hackclub.com/flavor/scroll-proxy.html';
+    }
     
     // serve on /unique to avoid player overlap
     const currentRoom = WA.room.id;
