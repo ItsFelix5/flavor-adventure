@@ -1,6 +1,6 @@
 /// <reference types="@workadventure/iframe-api-typings" />
 
-console.log('UI Scroll script started');
+// ui scroll script
 
 const SPLIT_RATIO = 0.5; // TODO: set dynamically to width of screen map does not use
 const PROXY_URL = 'http://maps.workadventure.localhost/flavor/scroll-proxy.html';
@@ -9,7 +9,7 @@ let website;
 let lastPlayerY = 0;
 let iframeElement = null;
 
-// Map dims (adjust))
+// Map dims 
 const MAP_HEIGHT = 60 * 32; // this can be modified to slow the scroll effect, but it 1:1 for now
 
 
@@ -154,3 +154,39 @@ function updateIframeScroll(playerY) {
         console.log('iframe not ready yet');
     }
 }
+
+// UI Exit Debug Script 
+
+console.log('UI Exit Debug script started');
+
+const EXIT_TARGET = '../../courtyard.tmj';
+const EXIT_AREA_Y = 192; // Top of exit area
+const EXIT_AREA_HEIGHT = 96; // Height of exit area (192-288 to catch player at Y 256)
+
+WA.onInit().then(async () => {
+    console.log('Exit debug initialized');
+    
+    // Debug: Log all areas on the map
+    console.log('Checking for areas on the map...');
+    
+    // detect on event and check current pos
+    WA.player.onPlayerMove((event) => {
+        const playerY = event.y;
+        
+        
+        if (playerY >= EXIT_AREA_Y && playerY <= (EXIT_AREA_Y + EXIT_AREA_HEIGHT)) {
+            console.log(`redir`);
+            WA.nav.goToRoom(EXIT_TARGET);
+        }
+    });
+    
+    console.log('Exit zone monitoring active - watching for Y position between', EXIT_AREA_Y, 'and', EXIT_AREA_Y + EXIT_AREA_HEIGHT);
+    
+    
+    const currentPos = await WA.player.getPosition();
+    console.log('Current player position:', currentPos);
+    if (currentPos.y >= EXIT_AREA_Y && currentPos.y <= (EXIT_AREA_Y + EXIT_AREA_HEIGHT)) {
+        console.log('player in zone');
+        WA.nav.goToRoom(EXIT_TARGET);
+    }
+});

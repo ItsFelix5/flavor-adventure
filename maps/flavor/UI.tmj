@@ -5,56 +5,12 @@
         {
          "draworder":"topdown",
          "id":83,
-         "name":"redirToSqaure",
+         "name":"floorplan",
          "objects":[
                 {
-                 "height":284,
-                 "id":27,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":479,
-                 "x":3,
-                 "y":3
-                }, 
-                {
-                 "height":152,
-                 "id":28,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":370,
-                 "x":67,
-                 "y":73
-                }, 
-                {
-                 "height":0,
-                 "id":29,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
-                 "x":-18,
-                 "y":2
-                }, 
-                {
-                 "height":285,
-                 "id":30,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":522,
-                 "x":-18,
-                 "y":2
-                }, 
-                {
-                 "height":1504,
+                 "height":32,
                  "id":85,
-                 "name":"exitToSquare",
+                 "name":"",
                  "properties":[
                         {
                          "name":"exitUrl",
@@ -64,9 +20,9 @@
                  "rotation":0,
                  "type":"area",
                  "visible":true,
-                  "width":64,
-                  "x":416,
-                 "y":0
+                 "width":480,
+                 "x":0,
+                 "y":192
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -677,8 +633,8 @@
         {
          "name":"script",
          "type":"string",
-         "value":"ui-scroll.js"
-        }, 
+         "value":"ui-bundle.js"
+        },
         {
          "name":"silent",
          "type":"bool",
