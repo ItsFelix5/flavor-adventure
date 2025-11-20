@@ -9,7 +9,7 @@ WA.room.onEnterZone('redirectToOffice', () => {
     console.log('Slack ID:', slackId);
     
     if (slackId) {
-        const targetUrl = `/_/global/play.workadventure.localhost/slack/${slackId}`;
+        const targetUrl = `/_/global/${window.location.host}/slack/${slackId}`;
         console.log('Sending to house', targetUrl);
         WA.nav.goToRoom(targetUrl);
     } else {

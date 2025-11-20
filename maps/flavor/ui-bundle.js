@@ -3,7 +3,7 @@
 // ui scroll script
 
 const SPLIT_RATIO = 0.5; // TODO: set dynamically to width of screen map does not use
-const PROXY_URL = 'http://maps.workadventure.localhost/flavor/scroll-proxy.html';
+const PROXY_URL = `${window.location.protocol}//${window.location.host.replace('play.', 'maps.')}/flavor/scroll-proxy.html`;
 
 let website;
 let lastPlayerY = 0;
@@ -26,9 +26,12 @@ WA.onInit().then(async () => {
         const uniqueId = crypto.randomUUID();
         // Force use of play service for dynamic unique maps
         // Replace both the path and ensure the host in /_/global/ uses play service
-        const targetRoom = currentRoom
-            .replace('/flavor/UI.tmj', `/flavor/unique/${uniqueId}/UI.tmj`)
-            .replace(/\/_\/global\/maps\.([^\/]+)\//, '/_/global/play.$1/');
+        let targetRoom = currentRoom
+            .replace('/flavor/UI.tmj', `/unique-ui/${uniqueId}/UI.tmj`);
+            
+        // In dev, we need to switch from maps. to play.
+        targetRoom = targetRoom.replace('maps.workadventure.localhost', 'play.workadventure.localhost');
+        
         console.log('Redirecting to unique room:', targetRoom);
         WA.nav.goToRoom(targetRoom);
         return; // Stop execution here

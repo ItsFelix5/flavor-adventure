@@ -8,8 +8,8 @@ export class DynamicMapController {
         app.get("/slack/:slackId", this.serveHouse.bind(this));
         // meetings at /meet/:meetId
         app.get("/meet/:meetId", this.serveMeeting.bind(this));
-        // unique UI maps at /flavor/unique/:uuid/UI.tmj
-        app.get("/flavor/unique/:uuid/UI.tmj", this.serveUniqueUI.bind(this));
+        // unique UI maps at /unique-ui/:uuid/UI.tmj
+        app.get("/unique-ui/:uuid/UI.tmj", this.serveUniqueUI.bind(this));
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
