@@ -32,6 +32,7 @@ WA.onInit().then(async () => {
         // In dev, we need to switch from maps. to play.
         targetRoom = targetRoom.replace('maps.workadventure.localhost', 'play.workadventure.localhost');
         
+        console.log('Original room:', currentRoom);
         console.log('Redirecting to unique room:', targetRoom);
         WA.nav.goToRoom(targetRoom);
         return; // Stop execution here
