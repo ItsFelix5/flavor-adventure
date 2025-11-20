@@ -194,11 +194,28 @@ function updateIframeScroll(playerY) {
 
 console.log('UI Exit Debug script started');
 
-const EXIT_TARGET = '../../courtyard.tmj';
+// Will be set dynamically
+let EXIT_TARGET = '/_/global/flavor-adventure.hackclub.com/flavor/courtyard.tmj';
 const EXIT_AREA_Y = 192; // Top of exit area
 const EXIT_AREA_HEIGHT = 96; // Height of exit area (192-288 to catch player at Y 256)
 
 WA.onInit().then(async () => {
+    // Update EXIT_TARGET based on current room ID
+    try {
+        const roomUrl = new URL(WA.room.id);
+        let host = roomUrl.host;
+        
+        // In dev, we need to switch from play. to maps.
+        if (host.includes('workadventure.localhost')) {
+             host = host.replace('play.', 'maps.');
+        }
+        
+        EXIT_TARGET = `/_/global/${host}/flavor/courtyard.tmj`;
+        console.log('EXIT_TARGET set to:', EXIT_TARGET);
+    } catch (e) {
+        console.error('Failed to set EXIT_TARGET:', e);
+    }
+
     console.log('Exit debug initialized');
     
     // Debug: Log all areas on the map
