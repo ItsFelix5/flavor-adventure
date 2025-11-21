@@ -258,7 +258,7 @@
          "name":"exitToSquare",
          "opacity":1,
          "type":"tilelayer",
-           "visible":false,
+         "visible":false,
          "width":15,
          "x":0,
          "y":0
@@ -461,7 +461,64 @@
          "draworder":"topdown",
          "id":81,
          "name":"Text",
-         "objects":[],
+         "objects":[
+                {
+                 "height":76.6405999999999,
+                 "id":34,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "bold":true,
+                     "fontfamily":"Ubuntu Sans",
+                     "pixelsize":49,
+                     "text":"\u2191",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":91.4375,
+                 "x":142.78125,
+                 "y":656.6797
+                }, 
+                {
+                 "height":102.1406,
+                 "id":37,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "bold":true,
+                     "fontfamily":"Ubuntu Sans",
+                     "pixelsize":27,
+                     "text":"\u2191Enter Flavor Town \u2191",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":379.4375,
+                 "x":101.28125,
+                 "y":901.1797
+                }, 
+                {
+                 "height":76.6406,
+                 "id":38,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "bold":true,
+                     "fontfamily":"Ubuntu Sans",
+                     "pixelsize":49,
+                     "text":"\u2191",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":91.4375,
+                 "x":309.78125,
+                 "y":485.6797
+                }],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -607,13 +664,13 @@
          "y":0
         }],
  "nextlayerid":85,
- "nextobjectid":31,
+ "nextobjectid":39,
  "orientation":"orthogonal",
  "properties":[
         {
          "name":"mapCopyright",
          "type":"string",
-         "value":"Credits: WorkAdventure (https:\/\/WorkAdventu.re) \nLicense: CC-BY-SA 3.0 (http:\/\/creativecommons.org\/licenses\/by-sa\/3.0\/)"
+         "value":"Credit: Euan + workadventure"
         }, 
         {
          "name":"mapDescription",
@@ -634,7 +691,7 @@
          "name":"script",
          "type":"string",
          "value":"ui-bundle.js"
-        },
+        }, 
         {
          "name":"silent",
          "type":"bool",
