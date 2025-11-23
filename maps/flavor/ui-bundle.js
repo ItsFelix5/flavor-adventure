@@ -134,22 +134,26 @@ WA.onInit().then(async () => {
                 contentWindow: {
                     postMessage: (data, origin) => {
                         const allIframes = findAllIframes();
-                        console.log(`Broadcasting to ${allIframes.length} iframes`);
-                        for (const iframe of allIframes) {
-                            if (iframe.contentWindow) {
-                                try {
-                                    iframe.contentWindow.postMessage(data, origin);
-                                } catch (e) {
-                                    // fail, log
-                                    console.log(e);
-                                }
-                            }
+                        if (allIframes.length > 0) {
+                             // console.log(`Broadcasting to ${allIframes.length} iframes`);
+                             for (const iframe of allIframes) {
+                                 if (iframe.contentWindow) {
+                                     try {
+                                         iframe.contentWindow.postMessage(data, origin);
+                                     } catch (e) {
+                                         // fail, log
+                                         // console.log(e);
+                                     }
+                                 }
+                             }
+                        } else {
+                            console.log('No iframes found to broadcast to (yet)');
                         }
                     }
                 }
             };
         }
-    }, 2000);
+    }, 5000); // Increased timeout to 5s to allow iframe to load
 
     
     WA.player.onPlayerMove((event) => {
