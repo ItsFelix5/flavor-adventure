@@ -184,6 +184,11 @@ export class ProximityChatRoom implements ChatRoom {
     }
 
     sendMessage(message: string, action: ChatMessageType = "proximity", broadcast = true): void {
+        if (!localUserStore.isLogged()) {
+            console.warn("Cannot send message: User is not logged in");
+            return;
+        }
+
         // Create content message
         const newChatMessageContent = {
             body: message,
@@ -240,7 +245,10 @@ export class ProximityChatRoom implements ChatRoom {
         if (action === "proximity") {
             // Send local message to WorkAdventure scripting API
             try {
-                iframeListener.sendUserInputChat(message, undefined);
+                // Only send if logged in
+                if (localUserStore.isLogged()) {
+                    iframeListener.sendUserInputChat(message, undefined);
+                }
             } catch (e) {
                 console.error("Error while sending message to WorkAdventure scripting API", e);
             }

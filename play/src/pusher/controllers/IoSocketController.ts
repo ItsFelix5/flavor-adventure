@@ -54,6 +54,10 @@ type UpgradeFailedInvalidTexture = {
 
 export type UpgradeFailedData = UpgradeFailedErrorData | UpgradeFailedInvalidData | UpgradeFailedInvalidTexture;
 
+export function isUpgradeFailedData(data: SocketData | UpgradeFailedData): data is UpgradeFailedData {
+    return "reason" in data && (data.reason === "tokenInvalid" || data.reason === "invalidVersion" || data.reason === "error" || data.reason === "invalidTexture");
+}
+
 export class IoSocketController {
     constructor(private readonly app: TemplatedApp) {
         // Global handler for unhandled Promises

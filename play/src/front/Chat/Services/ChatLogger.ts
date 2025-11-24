@@ -7,7 +7,6 @@ interface ChatLogPayload {
     playerName?: string;
     playerUuid?: string;
     roomId?: string;
-    matrixRoomId?: string;
     raw?: Record<string, unknown>;
     headers?: Record<string, unknown>;
 }
@@ -23,7 +22,7 @@ export class ChatLogger {
         console.debug("[ChatLogger] Logging chat message:", {
             type: payload.type,
             author: payload.author,
-            roomId: payload.roomId || payload.matrixRoomId,
+            roomId: payload.roomId,
         });
 
         try {

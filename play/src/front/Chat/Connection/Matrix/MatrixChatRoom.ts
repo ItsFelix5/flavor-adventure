@@ -500,7 +500,7 @@ export class MatrixChatRoom
                     author: userId ?? undefined,
                     playerName: localUserStore.getName() ?? undefined,
                     playerUuid: localUserStore.getLocalUser()?.uuid,
-                    matrixRoomId: roomId,
+                    roomId: roomId,
                     raw: {
                         roomName: this.matrixRoom.name,
                     },

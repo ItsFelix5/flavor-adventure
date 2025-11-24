@@ -26,6 +26,11 @@ export class SayManager {
     public constructor(private roomConnection: RoomConnection, private currentPlayer: Player) {}
 
     public say(text: string, type: SayMessageType, duration: number | undefined): void {
+        if (!localUserStore.isLogged()) {
+            console.warn("Cannot send say message: User is not logged in");
+            return;
+        }
+
         if (this.bubbleDestroyTimeout) {
             clearTimeout(this.bubbleDestroyTimeout);
             this.bubbleDestroyTimeout = undefined;
@@ -37,22 +42,22 @@ export class SayManager {
 
         // Log the say message if it's not empty
         if (text.trim().length > 0) {
-            const gameScene = gameManager.getCurrentGameScene();
-            const roomUrl = gameScene.roomUrl;
-            const localUser = localUserStore.getLocalUser();
-            const playerName = localUserStore.getName() || player.name;
+        const gameScene = gameManager.getCurrentGameScene();
+        const roomUrl = gameScene.roomUrl;
+        const localUser = localUserStore.getLocalUser();
+        const playerName = localUserStore.getName() || player.name;
 
-            ChatLogger.logMessage({
-                type: type === SayMessageType.SpeechBubble ? "say" : "think",
-                message: text,
-                author: localUser?.uuid, // Slack user ID from OpenID sub claim
-                playerName: playerName,
-                playerUuid: this.roomConnection.getUserId().toString(),
-                roomId: roomUrl,
-                raw: {
-                    duration: duration,
-                },
-            }).catch((e) => console.debug("Chat log failed:", e));
+        ChatLogger.logMessage({
+            type: type === SayMessageType.SpeechBubble ? "say" : "think",
+            message: text,
+            author: localUser?.uuid, // Slack user ID from OpenID sub claim
+            playerName: playerName,
+            playerUuid: localUser?.uuid, // Use consistent UUID source
+            roomId: roomUrl,
+            raw: {
+                duration: duration,
+            },
+        }).catch((e) => console.debug("Chat log failed:", e));
         }
 
         if (type === SayMessageType.ThinkingCloud) {

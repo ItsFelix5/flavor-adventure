@@ -71,6 +71,14 @@
     });
 
     function sendMessageOrEscapeLine(keyDownEvent: KeyboardEvent) {
+        if (!localUserStore.isLogged()) {
+            if (keyDownEvent.key === "Enter") {
+                keyDownEvent.preventDefault();
+                console.warn("Cannot send message: User is not logged in");
+            }
+            return;
+        }
+
         if (stopTypingTimeOutID) clearTimeout(stopTypingTimeOutID);
         room.startTyping()
             .then(() => {
@@ -102,6 +110,11 @@
     }
 
     function sendMessage(messageToSend: string) {
+        if (!localUserStore.isLogged()) {
+            console.warn("Cannot send message: User is not logged in");
+            return;
+        }
+
         if (applicationProperty && applicationProperty.link.length !== 0) {
             room?.sendMessage(applicationProperty.link);
         }

@@ -10,7 +10,6 @@ const ChatLogSchema = z.object({
     playerName: z.string().optional(),
     playerUuid: z.string().optional(),
     roomId: z.string().optional(),
-    matrixRoomId: z.string().optional(),
     raw: z.record(z.unknown()).optional(), // JSONB for raw data
     headers: z.record(z.unknown()).optional(), // JSONB for headers
 });
@@ -55,7 +54,7 @@ export class ChatLogController {
             console.debug("[ChatLogController] Inserting chat log into database:", {
                 type: payload.type,
                 author: payload.author,
-                roomId: payload.roomId || payload.matrixRoomId,
+                roomId: payload.roomId,
             });
 
             await postgresClient.query(
@@ -67,7 +66,7 @@ export class ChatLogController {
                     payload.author ?? null,
                     payload.playerName ?? null,
                     payload.playerUuid ?? null,
-                    payload.roomId ?? payload.matrixRoomId ?? null,
+                    payload.roomId ?? null,
                     payload.message,
                     payload.raw ? JSON.stringify(payload.raw) : null,
                     payload.headers ? JSON.stringify(payload.headers) : null,
