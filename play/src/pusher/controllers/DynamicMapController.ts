@@ -1,9 +1,13 @@
 import fs from "fs";
 import type { Application, Request, Response } from "express";
 import { postgresClient } from "../services/PostgresClient";
+import path from "path";
+import { BaseHttpController } from "./BaseHttpController";
 
-export class DynamicMapController {
+export class DynamicMapController extends BaseHttpController {
     constructor(app: Application) {
+        super(app);
+
         // houses under /slack/:slackId
         app.get("/slack/:slackId", this.serveHouse.bind(this));
         // meetings at /meet/:meetId
@@ -209,11 +213,7 @@ export class DynamicMapController {
                     }
                     // Also fix script paths
                     if (
-                        prop.name === "script" &&
-                        prop.value &&
-                        !prop.value.startsWith("http://") &&
-                        !prop.value.startsWith("https://")
-                    ) {
+                        prop.name
                         prop.value = `${mapsBaseUrl}/${prop.value}`;
                     }
                 }

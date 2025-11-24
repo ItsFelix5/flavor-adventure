@@ -17,7 +17,7 @@ import { analyticsClient } from "../Administration/AnalyticsClient";
 import { userIsConnected, warningBannerStore } from "../Stores/MenuStore";
 import { loginSceneVisibleIframeStore } from "../Stores/LoginSceneStore";
 import { _ServiceWorker } from "../Network/ServiceWorker";
-import { GameConnexionTypes, urlManager } from "../Url/UrlManager";
+import { GameConnexionTypes, urlManager } from "../Url
 import {
     CARDS_ENABLED,
     ENABLE_OPENID,
@@ -929,6 +929,14 @@ class ConnectionManager {
 
     get applications(): ApplicationDefinitionInterface[] {
         return this._applications;
+    }
+
+    private shouldBypassAuth(roomUrl: string): boolean {
+        // Check if URL contains /unique-ui/ pattern
+        // This works for both:
+        // /_/global/maps.workadventure.localhost/unique-ui/xxx/UI.tmj
+        // /_/global/flavor-adventure.hackclub.com/unique-ui/xxx/UI.tmj
+        return roomUrl.includes("/unique-ui/");
     }
 }
 

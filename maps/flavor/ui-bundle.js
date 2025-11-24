@@ -51,17 +51,38 @@ WA.onInit().then(async () => {
     
     // serve on /unique to avoid player overlap
     const currentRoom = WA.room.id;
-    const isUniqueRoom = currentRoom.includes('/unique'); // Matches /unique/ and /unique-ui/
+    const isUniqueRoom = currentRoom.includes('/unique-ui/'); // Simplified check
     
     if (!isUniqueRoom) {
         const uniqueId = crypto.randomUUID();
-        // Force use of play service for dynamic unique maps
-        // Replace both the path and ensure the host in /_/global/ uses play service
-        let targetRoom = currentRoom
-            .replace('/flavor/UI.tmj', `/unique-ui/${uniqueId}/UI.tmj`);
-            
-        // In dev, we need to switch from maps. to play.
-        targetRoom = targetRoom.replace('maps.workadventure.localhost', 'play.workadventure.localhost');
+        
+        // Build the target room URL
+        // Extract the base URL structure: /_/global/HOST/path/to/file
+        let targetRoom = currentRoom.replace('/flavor/UI.tmj', `/unique-ui/${uniqueId}/UI.tmj`);
+        
+        // For production, ensure we're redirecting through the play service
+        // The URL format should be: /_/global/PLAY_HOST/unique-ui/UUID/UI.tmj
+        try {
+            const url = new URL(currentRoom);
+            const pathParts = url.pathname.split('/');
+            // pathParts = ['', '_', 'global', 'HOST', ...rest]
+            if (pathParts.length >= 4) {
+                const host = pathParts[3];
+                // Replace maps. with play. for the redirect
+                const playHost = host.replace('maps.', 'play.');
+                pathParts[3] = playHost;
+                // Replace the map path
+                pathParts[pathParts.length - 1] = `unique-ui/${uniqueId}/UI.tmj`;
+                // Remove 'flavor' segment if present
+                const flavorIndex = pathParts.indexOf('flavor');
+                if (flavorIndex !== -1) {
+                    pathParts.splice(flavorIndex, 1);
+                }
+                targetRoom = `${url.protocol}//${url.host}${pathParts.join('/')}`;
+            }
+        } catch (e) {
+            console.error('Failed to construct target room URL:', e);
+        }
         
         console.log('Original room:', currentRoom);
         console.log('Redirecting to unique room:', targetRoom);
