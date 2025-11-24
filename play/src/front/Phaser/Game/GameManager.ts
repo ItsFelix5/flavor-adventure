@@ -81,12 +81,16 @@ export class GameManager {
         console.info("Preferred video input device: " + preferredVideoInputDeviceId);
 
         //If player name was not set show login scene with player name
-        //If Room si not public and Auth was not set, show login scene to authenticate user (OpenID - SSO - Anonymous)
-        if (!this.playerName || (this.startRoom.authenticationMandatory && !localUserStore.getAuthToken())) {
+        if (
+            !this.playerName ||
+            (this.startRoom.authenticationMandatory && !localUserStore.getLocalUser()?.email)
+        ) {
             return LoginSceneName;
-        } else if (result.nextScene === "selectCharacterScene") {
+        } else if (result.nextScene === "selectCharacterScene" && localUserStore.isLogged()) {
+            // Only show character selection if user is logged in
             return SelectCharacterSceneName;
-        } else if (result.nextScene === "selectCompanionScene") {
+        } else if (result.nextScene === "selectCompanionScene" && localUserStore.isLogged()) {
+            // Only show companion selection if user is logged in
             return SelectCompanionSceneName;
         } else if (preferredVideoInputDeviceId === undefined || preferredAudioInputDeviceId === undefined) {
             return EnableCameraSceneName;

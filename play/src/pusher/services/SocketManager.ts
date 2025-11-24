@@ -64,6 +64,7 @@ import { apiClientRepository } from "./ApiClientRepository";
 import { adminService } from "./AdminService";
 import { ShortMapDescription } from "./ShortMapDescription";
 import { matrixProvider } from "./MatrixProvider";
+import { redisClient } from "./RedisClient";
 
 const debug = Debug("socket");
 
@@ -76,6 +77,8 @@ export class SocketManager implements ZoneEventListener {
     private spaces: Map<string, SpaceInterface> = new Map<string, SpaceInterface>();
 
     constructor(private _spaceConnection = new SpaceConnection()) {
+        redisClient.init().catch((err) => console.error("Failed to init Redis client", err));
+
         clientEventsEmitter.registerToClientJoin((clientUUid: string, roomId: string) => {
             gaugeManager.incNbClientPerRoomGauge(roomId);
         });
@@ -322,6 +325,32 @@ export class SocketManager implements ZoneEventListener {
                     joinRoomMessage,
                 },
             };
+
+            // Check if user is already online (only for logged in users)
+            if (socketData.isLogged) {
+                const isOnline = await redisClient.isUserOnline(socketData.userUuid);
+                if (isOnline) {
+                    console.warn(`User ${socketData.userUuid} is already connected. Rejecting new connection.`);
+                    // User is already online. Reject connection.
+                    socketData.emitInBatch({
+                        message: {
+                            $case: "errorMessage",
+                            errorMessage: {
+                                message: "You are already connected in another tab or device.",
+                            },
+                        },
+                    });
+                    // We need to close the connection
+                    socketData.rejected = true;
+                    this.closeWebsocketConnection(client, 4000, "User already connected");
+                    return;
+                }
+                // Only set user online if they are not anonymous
+                if (!socketData.userUuid.startsWith("00000")) {
+                    await redisClient.setUserOnline(socketData.userUuid);
+                }
+            }
+
             streamToBack.write(pusherToBackMessage);
 
             const pusherRoom = await this.getOrCreateRoom(socketData.roomId);
@@ -429,6 +458,11 @@ export class SocketManager implements ZoneEventListener {
         try {
             socketData.disconnecting = true;
             this.leaveRoom(client);
+            if (socketData.isLogged && !socketData.rejected) {
+                redisClient.setUserOffline(socketData.userUuid).catch((e) => {
+                    console.error("Error while removing user from redis", e);
+                });
+            }
         } catch (e) {
             Sentry.captureException(e);
             console.error("Error while leaving room", e);

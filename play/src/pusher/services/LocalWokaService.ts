@@ -31,6 +31,11 @@ class LocalWokaService implements WokaServiceInterface {
         const textures = new Map<string, string>();
         const searchIds = new Set(textureIds);
 
+        if (searchIds.has("ghost")) {
+            textures.set("ghost", "resources/characters/pipoya/ghost.png");
+            searchIds.delete("ghost");
+        }
+
         for (const part of wokaPartNames) {
             const wokaPartType = wokaData[part];
             if (!wokaPartType) {

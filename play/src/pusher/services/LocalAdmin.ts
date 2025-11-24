@@ -63,6 +63,11 @@ class LocalAdmin implements AdminInterface {
         locale?: string,
         tags?: string[]
     ): Promise<FetchMemberDataByUuidResponse> {
+        console.log("DEBUG: fetchMemberDataByUuid called", {
+            userIdentifier,
+            accessToken: accessToken ? "HIDDEN" : "undefined",
+            characterTextureIds,
+        });
         let canEdit = false;
         const roomUrl = new URL(playUri);
         const match = /\/~\/(.+)/.exec(roomUrl.pathname);
@@ -80,10 +85,56 @@ class LocalAdmin implements AdminInterface {
         // allow character selection if they havent already done so
         let isCharacterTexturesValid = characterTextureIds.length > 0;
 
+        console.log("DEBUG: initial isCharacterTexturesValid", isCharacterTexturesValid);
+
+        // Heuristic to determine if the user is logged in or anonymous.
+        // Logged in users usually have an email as identifier.
+        // Anonymous users have a UUID.
+        // If accessToken is present, we assume logged in.
+        // If accessToken is missing, we check if identifier is an email.
+        const isEmail = String(userIdentifier)
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+
+        // Quick fix for Bart Forgler (fake login)
+        const isFakeLogin = accessToken === "fake_access_token";
+        const isAnonymous = (accessToken === undefined && !isEmail) && !isFakeLogin;
+
+        if (isAnonymous) {
+            // Anonymous user
+            // If anonymous, we MUST use the ghost texture.
+            if (characterTextureIds.length !== 1 || characterTextureIds[0] !== "ghost") {
+                console.log("DEBUG: Forcing ghost texture for anonymous user");
+                // If the user is anonymous and not using the ghost texture, we force the ghost texture.
+                // But wait, we are returning data to the front.
+                // If we return isCharacterTexturesValid = false, the front will ask to choose a character.
+                // But we want to prevent that for anonymous users.
+                // So we should probably return the ghost texture here and say it IS valid.
+                isCharacterTexturesValid = true;
+                characterTextureIds = ["ghost"];
+            }
+        }
+
         const characterTextures = await localWokaService.fetchWokaDetails(characterTextureIds);
         if (characterTextures === undefined) {
             isCharacterTexturesValid = false;
+        } else if (isAnonymous && characterTextureIds[0] === "ghost") {
+            // Force valid for ghost anonymous
+            isCharacterTexturesValid = true;
+        } else if (
+            !isAnonymous &&
+            characterTextureIds.length === 1 &&
+            characterTextureIds[0] === "ghost"
+        ) {
+            // If the user is NOT anonymous (signed in) but still has the ghost texture (from previous anonymous session),
+            // we mark it as INVALID so they are forced to choose a new character.
+            isCharacterTexturesValid = false;
         }
+
+        console.log("DEBUG: final isCharacterTexturesValid", isCharacterTexturesValid);
+        console.log("DEBUG: characterTextures", characterTextures);
 
         let isCompanionTextureValid = true;
         let companionTexture: CompanionDetail | undefined = undefined;

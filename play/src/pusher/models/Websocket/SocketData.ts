@@ -27,7 +27,7 @@ export interface BackSpaceConnection extends BackSpaceConnection_ {
 export type SpaceName = string;
 
 export type SocketData = {
-    rejected: false;
+    rejected: boolean;
     disconnecting: boolean;
     token: string;
     roomId: string;

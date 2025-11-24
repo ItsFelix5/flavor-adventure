@@ -21,6 +21,9 @@ export class PinchManager {
 
         // eslint-disable-next-line
         this.pinch.on("pinch", (pinch: any) => {
+            // Disable pinch zoom
+            return;
+
             if (pinch.scaleFactor > 1.2 || pinch.scaleFactor < 0.8) {
                 // Pinch too fast! Probably a bad measure.
                 return;
@@ -28,6 +31,7 @@ export class PinchManager {
 
             smoothPinch = (3 / 5) * smoothPinch + (2 / 5) * pinch.scaleFactor;
             if (this.scene instanceof GameScene) {
+                // @ts-ignore: zoomByFactor exists on GameScene but typings might be missing
                 this.scene.zoomByFactor(smoothPinch, false);
             } else {
                 waScaleManager.zoomModifier *= smoothPinch;

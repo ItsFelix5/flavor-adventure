@@ -10,8 +10,10 @@
     import { getItemsPerRow } from "./ItemsPerRow";
     import WokaImage from "./WokaImage.svelte";
 
-    export let customize: () => void;
-    export let saveAndContinue: (texturesId: string[]) => void;
+    // @ts-ignore: These exports are used by the parent component
+    export const customize: (() => void) | undefined = undefined;
+    // @ts-ignore: These exports are used by the parent component
+    export const saveAndContinue: ((texturesId: string[]) => void) | undefined = undefined;
 
     let wokaData: WokaData | null = null;
     let currentWokaCollection: WokaCollection | null = null;

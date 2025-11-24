@@ -68,4 +68,6 @@ export interface FrontConfigurationInterface {
     ENABLE_SAY: boolean | undefined;
     GRPC_MAX_MESSAGE_SIZE: number;
     CHAT_LOG_SECRET: string | undefined;
+    HACK_CLUB_CLIENT_ID: string | undefined;
+    HACK_CLUB_CLIENT_SECRET: string | undefined;
 }

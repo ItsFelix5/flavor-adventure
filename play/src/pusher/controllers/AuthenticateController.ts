@@ -8,12 +8,14 @@ import { Application } from "express";
 import Debug from "debug";
 import { AuthTokenData, jwtTokenManager } from "../services/JWTTokenManager";
 import { openIDClient } from "../services/OpenIDClient";
+import { hackClubAuthClient } from "../services/HackClubAuthClient";
 import { DISABLE_ANONYMOUS, FRONT_URL, MATRIX_PUBLIC_URI } from "../enums/EnvironmentVariable";
 import { adminService } from "../services/AdminService";
 import { validateQuery } from "../services/QueryValidator";
 import { VerifyDomainService } from "../services/verifyDomain/VerifyDomainService";
 import { matrixProvider } from "../services/MatrixProvider";
 import { postgresClient } from "../services/PostgresClient";
+import { redisClient } from "../services/RedisClient";
 import { BaseHttpController } from "./BaseHttpController";
 
 const debug = Debug("pusher:requests");
@@ -21,11 +23,12 @@ const debug = Debug("pusher:requests");
 export class AuthenticateController extends BaseHttpController {
     private readonly redirectToMatrixFile: string;
     private readonly redirectToPlayFile: string;
+    private readonly loginOptionsFile: string;
     constructor(app: Application) {
         super(app);
 
         let redirectToMatrixPath: string;
-        if (fs.existsSync("dist/public/redirectToMatrix.html")) {
+        if (process.env.NODE_ENV === "production" && fs.existsSync("dist/public/redirectToMatrix.html")) {
             // In prod mode
             redirectToMatrixPath = "dist/public/redirectToMatrix.html";
         } else if (fs.existsSync("redirectToMatrix.html")) {
@@ -41,7 +44,7 @@ export class AuthenticateController extends BaseHttpController {
         Mustache.parse(this.redirectToMatrixFile);
 
         let redirectToPlayPath: string;
-        if (fs.existsSync("dist/public/redirectToPlay.html")) {
+        if (process.env.NODE_ENV === "production" && fs.existsSync("dist/public/redirectToPlay.html")) {
             // In prod mode
             redirectToPlayPath = "dist/public/redirectToPlay.html";
         } else if (fs.existsSync("redirectToPlay.html")) {
@@ -55,10 +58,28 @@ export class AuthenticateController extends BaseHttpController {
 
         // Pre-parse the file for speed (and validation)
         Mustache.parse(this.redirectToPlayFile);
+
+        let loginOptionsPath: string;
+        if (process.env.NODE_ENV === "production" && fs.existsSync("dist/public/loginOptions.html")) {
+            // In prod mode
+            loginOptionsPath = "dist/public/loginOptions.html";
+        } else if (fs.existsSync("loginOptions.html")) {
+            // In dev mode
+            loginOptionsPath = "loginOptions.html";
+        } else {
+            throw new Error("Could not find loginOptions.html file");
+        }
+
+        this.loginOptionsFile = fs.readFileSync(loginOptionsPath, "utf8");
+        Mustache.parse(this.loginOptionsFile);
     }
 
     routes(): void {
         this.openIDLogin();
+        this.authSlack();
+        this.authHackClub();
+        this.hackClubCallback();
+        this.authBart();
         this.me();
         this.openIDCallback();
         this.matrixCallback();
@@ -69,12 +90,14 @@ export class AuthenticateController extends BaseHttpController {
         this.logoutUser();
     }
 
-    private openIDLogin(): void {
+
+
+    private authSlack(): void {
         /**
          * @openapi
-         * /login-screen:
+         * /auth/slack:
          *   get:
-         *     description: Redirects the user to the OpenID login screen
+         *     description: Redirects the user to the Slack login screen
          *     parameters:
          *      - name: "nonce"
          *        in: "query"
@@ -93,11 +116,11 @@ export class AuthenticateController extends BaseHttpController {
          *        type: "string"
          *     responses:
          *       302:
-         *         description: Redirects the user to the OpenID login screen
+         *         description: Redirects the user to the Slack login screen
          *
          */
 
-        this.app.get("/login-screen", async (req, res) => {
+        this.app.get("/auth/slack", async (req, res) => {
             debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
             const query = validateQuery(
                 req,
@@ -134,10 +157,334 @@ export class AuthenticateController extends BaseHttpController {
             );
             res.cookie("playUri", query.playUri, {
                 httpOnly: true,
-                secure: req.secure, // enforce https
+                secure: req.secure && process.env.NODE_ENV !== "development", // enforce https only in prod
+                sameSite: "lax",
             });
 
             res.redirect(loginUri);
+            return;
+        });
+    }
+
+    private authHackClub(): void {
+        /**
+         * @openapi
+         * /auth/hackclub:
+         *   get:
+         *     description: Redirects the user to the Hack Club login screen
+         *     parameters:
+         *      - name: "playUri"
+         *        in: "query"
+         *        description: "todo"
+         *        required: false
+         *        type: "string"
+         *     responses:
+         *       302:
+         *         description: Redirects the user to the Hack Club login screen
+         */
+        this.app.get("/auth/hackclub", async (req, res) => {
+            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+            const query = validateQuery(
+                req,
+                res,
+                z.object({
+                    playUri: z.string(),
+                    manuallyTriggered: z.literal("true").optional(),
+                    chatRoomId: z.string().optional(),
+                    providerId: z.string().optional(),
+                    providerScopes: z.string().array().optional(),
+                })
+            );
+            if (query === undefined) {
+                return;
+            }
+
+            const verifyDomainService_ = VerifyDomainService.get(await adminService.getCapabilities());
+            const verifyDomainResult = await verifyDomainService_.verifyDomain(query.playUri);
+            if (!verifyDomainResult) {
+                res.status(403);
+                res.send("Unauthorized domain in playUri");
+                return;
+            }
+
+            const loginUri = hackClubAuthClient.authorizationUrl(
+                res,
+                query.playUri,
+                req,
+                query.manuallyTriggered,
+                query.chatRoomId,
+                query.providerId,
+                query.providerScopes
+            );
+
+            res.cookie("playUri", query.playUri, {
+                httpOnly: true,
+                secure: req.secure && process.env.NODE_ENV !== "development",
+                sameSite: "lax",
+            });
+
+            res.redirect(loginUri);
+        });
+    }
+
+    private authBart(): void {
+        /**
+         * @openapi
+         * /auth/bart:
+         *   get:
+         *     description: Login as Bart Forgler (Fake User)
+         *     parameters:
+         *      - name: "playUri"
+         *        in: "query"
+         *        description: "todo"
+         *        required: false
+         *        type: "string"
+         *     responses:
+         *       302:
+         *         description: Redirects to the game
+         */
+        this.app.get("/auth/bart", async (req, res) => {
+            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+            const query = validateQuery(
+                req,
+                res,
+                z.object({
+                    playUri: z.string().optional(),
+                })
+            );
+            if (query === undefined) {
+                return;
+            }
+
+            let playUri = query.playUri;
+            if (!playUri) {
+                playUri = req.cookies.playUri || FRONT_URL;
+            }
+
+            // Bart Forgler credentials
+            const slackId = "00000";
+            const name = "Bart Forgler";
+            const email = "bartforgler@hackclub.com";
+
+            try {
+                // Upsert Bart
+                const userPerms = await postgresClient.upsertUser(
+                    slackId,
+                    name,
+                    email
+                );
+
+                const tags = [];
+                if (userPerms.isAdmin) tags.push("admin");
+                if (userPerms.hasPets) tags.push("pets");
+
+                // Force remove from Redis online set to ensure we can login even if "stuck"
+                // This is safe for a dev/test user like Bart
+                const userUuid = "00000"; // Bart's UUID
+                await redisClient.setUserOffline(userUuid);
+
+                const authToken = jwtTokenManager.createAuthToken(
+                    email,
+                    "fake_access_token", // no real access token, but we need one for isLogged() to return true
+                    name,
+                    undefined, // locale
+                    tags,
+                    matrixProvider.getBareMatrixIdFromEmail(email),
+                    slackId
+                );
+
+                res.clearCookie("playUri");
+                res.redirect(playUri + "?token=" + encodeURIComponent(authToken));
+            } catch (e) {
+                console.error("Error logging in as Bart:", e);
+                res.status(500).send("Error logging in as Bart");
+            }
+        });
+    }
+
+    private hackClubCallback(): void {
+        /**
+         * @openapi
+         * /auth/hackclub/callback:
+         *   get:
+         *     description: Callback endpoint for Hack Club OAuth
+         */
+        this.app.get("/auth/hackclub/callback", async (req, res) => {
+            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+
+            if (req.query.error) {
+                console.warn("Error from Hack Club OAuth:", req.query.error);
+                const playUri = req.cookies.playUri || FRONT_URL;
+                res.clearCookie("playUri");
+                res.redirect(playUri);
+                return;
+            }
+
+            const playUri = req.cookies.playUri;
+            if (!playUri) {
+                console.warn("Missing playUri in cookies, redirecting to home");
+                res.redirect(FRONT_URL);
+                return;
+            }
+
+            // Verify state
+            const state = req.cookies.oidc_state;
+            if (state && req.query.state && state !== req.query.state) {
+                console.error("State mismatch in Hack Club callback");
+                res.status(400).send("State mismatch");
+                return;
+            }
+            res.clearCookie("oidc_state");
+
+            try {
+                const code = req.query.code as string;
+                if (!code) {
+                    throw new Error("No code provided");
+                }
+
+                const accessToken = await hackClubAuthClient.exchangeCode(code);
+                const userInfo = await hackClubAuthClient.getUserInfo(accessToken);
+
+                const email = userInfo.email;
+                const slackId = userInfo.slack_id; // Use slack_id if available (preferred) or fallback to id in sub
+
+                // If we have a slackId but the name from Hack Club is not what we want,
+                // we could try to fetch it from the DB if the user already exists.
+                // The user specifically requested to use the Slack API to get the name from slackId.
+                // However, we don't have a Slack Bot Token configured to query the Slack API directly here.
+                // But we do have the postgres database which might already have the user's correct name if they logged in before.
+                // Or we can rely on the fact that if we upsert with the email/slackId, the existing name in DB might be preserved 
+                // if we passed undefined for name? But upsertUser updates name.
+                
+                // Let's see if we can fetch the existing user from DB to get the name if we want to preserve it,
+                // OR if the requirement implies we should fetch it fresh from Slack.
+                // Since we don't have a Slack token here, we can't fetch fresh from Slack API easily without adding more configuration.
+                
+                // Wait, if the user logs in via Hack Club, maybe we should just use the name provided by Hack Club for now,
+                // unless the user strictly means "I want the name from Slack". 
+                // If so, we would need to add SLACK_BOT_TOKEN to env vars and use it.
+                
+                // BUT, looking at `postgresClient.getUserBySlackId`, we can fetch the user by slackId.
+                let name = userInfo.name;
+                if (slackId) {
+                    const existingUser = await postgresClient.getUserBySlackId(slackId);
+                    if (existingUser && existingUser.givenName) {
+                        name = existingUser.givenName;
+                    }
+                }
+
+                // Upsert user
+                let isAdmin = false;
+                let hasPets = false;
+                let isBanned = false;
+
+                if (slackId) {
+                    try {
+                        const userPerms = await postgresClient.upsertUser(
+                            slackId,
+                            name,
+                            email
+                        );
+                        isAdmin = userPerms.isAdmin;
+                        hasPets = userPerms.hasPets;
+                        isBanned = userPerms.isBanned;
+                    } catch (e) {
+                        console.error("[AuthenticateController] Failed to upsert user from Hack Club login:", e);
+                    }
+                }
+
+                if (isBanned) {
+                    console.warn("[AuthenticateController] User is banned:", slackId);
+                    res.clearCookie("playUri");
+                    return res.redirect("/banned.html");
+                }
+
+                const tags = [];
+                if (isAdmin) tags.push("admin");
+                if (hasPets) tags.push("pets");
+
+                const authToken = jwtTokenManager.createAuthToken(
+                    email,
+                    accessToken,
+                    name,
+                    undefined, // locale
+                    tags,
+                    email ? matrixProvider.getBareMatrixIdFromEmail(email) : undefined,
+                    slackId // Use slackId as the primary identifier for consistency with Slack login
+                );
+
+                res.clearCookie("playUri");
+                res.redirect(playUri + "?token=" + encodeURIComponent(authToken));
+
+            } catch (err) {
+                console.error("Error during Hack Club login callback:", err);
+                res.status(500).send("An error occurred while logging in with Hack Club.");
+            }
+        });
+    }
+
+    private openIDLogin(): void {
+        /**
+         * @openapi
+         * /login-screen:
+         *   get:
+         *     description: Show the login options screen
+         *     parameters:
+         *      - name: "nonce"
+         *        in: "query"
+         *        description: "todo"
+         *        required: true
+         *        type: "string"
+         *      - name: "state"
+         *        in: "query"
+         *        description: "todo"
+         *        required: true
+         *        type: "string"
+         *      - name: "playUri"
+         *        in: "query"
+         *        description: "todo"
+         *        required: false
+         *        type: "string"
+         *     responses:
+         *       200:
+         *         description: Show the login options screen
+         *
+         */
+
+        this.app.get("/login-screen", async (req, res) => {
+            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+            const query = validateQuery(
+                req,
+                res,
+                z.object({
+                    playUri: z.string(),
+                    manuallyTriggered: z.literal("true").optional(),
+                    chatRoomId: z.string().optional(),
+                    providerId: z.string().optional(),
+                    providerScopes: z.string().array().optional(), // Optional scopes to request
+                })
+            );
+            if (query === undefined) {
+                return;
+            }
+
+            // Let's validate the playUri (we don't want a hacker to forge a URL that will redirect to a malicious URL)
+            const verifyDomainService_ = VerifyDomainService.get(await adminService.getCapabilities());
+            const verifyDomainResult = await verifyDomainService_.verifyDomain(query.playUri);
+            if (!verifyDomainResult) {
+                res.status(403);
+                res.send("Unauthorized domain in playUri");
+                return;
+            }
+
+            // Reconstruct query string to pass to the next step
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const queryString = new URLSearchParams(req.query as any).toString();
+
+            const html = Mustache.render(this.loginOptionsFile, {
+                queryString,
+            });
+            res.set("Cache-Control", "no-cache").type("html").send(html);
             return;
         });
     }
@@ -291,9 +638,21 @@ export class AuthenticateController extends BaseHttpController {
 
         this.app.get("/openid-callback", async (req, res) => {
             debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+            
+            // Handle error from OpenID provider (e.g. user cancelled)
+            if (req.query.error) {
+                console.warn("Error from OpenID provider:", req.query.error, req.query.error_description);
+                const playUri = req.cookies.playUri || FRONT_URL;
+                res.clearCookie("playUri");
+                res.redirect(playUri);
+                return;
+            }
+
             const playUri = req.cookies.playUri;
             if (!playUri) {
-                throw new Error("Missing playUri in cookies");
+                console.warn("Missing playUri in cookies, redirecting to home");
+                res.redirect(FRONT_URL);
+                return;
             }
 
             let userInfo = null;

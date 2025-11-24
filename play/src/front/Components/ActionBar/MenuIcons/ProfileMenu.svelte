@@ -263,6 +263,21 @@
                             {$LL.menu.profile.logout()}
                         </div>
                     </button>
+                {:else if ENABLE_OPENID}
+                    <ActionBarButton
+                        label={$LL.actionbar.login()}
+                        on:click={() => {
+                            const loginUrl = connectionManager.loadOpenIDScreen(true);
+                            if (loginUrl) {
+                                window.location.href = loginUrl.toString();
+                            }
+                        }}
+                    >
+                        <div class="transition-all w-6 h-6 aspect-square text-center flex items-center justify-center">
+                            <!-- Use a login icon or user icon -->
+                            <ProfilIcon />
+                        </div>
+                    </ActionBarButton>
                 {/if}
             </div>
         </div>

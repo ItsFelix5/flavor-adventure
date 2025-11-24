@@ -172,6 +172,7 @@ import { SpaceInterface } from "../../Space/SpaceInterface";
 import { UserProviderInterface } from "../../Chat/UserProvider/UserProviderInterface";
 import { popupStore } from "../../Stores/PopupStore";
 import PopUpRoomAccessDenied from "../../Components/PopUp/PopUpRoomAccessDenied.svelte";
+import PopUpSignInRequired from "../../Components/PopUp/PopUpSignInRequired.svelte";
 import PopUpTriggerActionMessage from "../../Components/PopUp/PopUpTriggerActionMessage.svelte";
 import PopUpMapEditorNotEnabled from "../../Components/PopUp/PopUpMapEditorNotEnabled.svelte";
 import PopUpMapEditorShortcut from "../../Components/PopUp/PopUpMapEditorShortcut.svelte";
@@ -1056,6 +1057,34 @@ export class GameScene extends DirtyScene {
             );
 
             this.mapTransitioning = false;
+            return;
+        }
+
+        if (!localUserStore.getLocalUser()?.email && targetRoom.authenticationMandatory) {
+            this.mapTransitioning = false;
+            popupStore.addPopup(
+                PopUpSignInRequired,
+                {
+                    message:
+                        "Sign in to be able to speak, as well as getting your own house and the ability to start meetings!",
+                    click: () => {
+                        popupStore.removePopup("roomAccessDenied");
+                    },
+                    onSignIn: () => {
+                        localUserStore.setCharacterTextures([]);
+                        localUserStore.setAuthToken(null);
+                        const loginUrl = connectionManager.loadOpenIDScreen(true);
+                        if (loginUrl) {
+                            window.location.href = loginUrl.toString();
+                        } else {
+                            window.location.href = "/login";
+                        }
+                        popupStore.removePopup("roomAccessDenied");
+                    },
+                    userInputManager: this.userInputManager,
+                },
+                "roomAccessDenied"
+            );
             return;
         }
 
@@ -3849,6 +3878,9 @@ ${escapedMessage}
     }
 
     handleMouseWheel(deltaY: number) {
+        // Disable zoom with mouse wheel
+        return;
+
         // Calculate the velocity of the zoom
         //const velocity = deltaY / 30;
 
