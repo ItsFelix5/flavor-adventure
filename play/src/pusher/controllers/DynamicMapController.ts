@@ -213,7 +213,11 @@ export class DynamicMapController extends BaseHttpController {
                     }
                     // Also fix script paths
                     if (
-                        prop.name
+                        prop.name === "script" &&
+                        prop.value &&
+                        !prop.value.startsWith("http://") &&
+                        !prop.value.startsWith("https://")
+                    ) {
                         prop.value = `${mapsBaseUrl}/${prop.value}`;
                     }
                 }
