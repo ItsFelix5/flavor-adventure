@@ -94,7 +94,7 @@ services:
       ADMIN_API_TOKEN: "$ADMIN_API_TOKEN"
       MAP_STORAGE_API_TOKEN: "FFVSGBSGBSGFB23SFGBSFG4BS"
       API_URL: back:50051
-      DISABLE_ANONYMOUS: true
+      DISABLE_ANONYMOUS: false
       #Map editor
       PUBLIC_MAP_STORAGE_URL: "http://map-storage.workadventure.localhost"
       INTERNAL_MAP_STORAGE_URL: "http://map-storage:3000"
@@ -135,7 +135,8 @@ services:
       #GRPC_VERBOSITY: DEBUG
       #GRPC_TRACE: all
       FEATURE_FLAG_BROADCAST_AREAS: "true"
-      # Integration tools
+      # Redis
+      REDIS_HOST: redis
       KLAXOON_ENABLED: "$KLAXOON_ENABLED"
       KLAXOON_CLIENT_ID: "$KLAXOON_CLIENT_ID"
       YOUTUBE_ENABLED: "$YOUTUBE_ENABLED"
@@ -159,6 +160,9 @@ services:
       # Google drive picker
       GOOGLE_DRIVE_PICKER_CLIENT_ID: "$GOOGLE_DRIVE_PICKER_CLIENT_ID"
       GOOGLE_DRIVE_PICKER_APP_ID: "$GOOGLE_DRIVE_PICKER_APP_ID"
+      # Hack Club OAuth
+      HACK_CLUB_CLIENT_ID: "$HACK_CLUB_CLIENT_ID"
+      HACK_CLUB_CLIENT_SECRET: "$HACK_CLUB_CLIENT_SECRET"
       #Chat - DISABLED
       MATRIX_API_URI: ""
       MATRIX_PUBLIC_URI: ""
