@@ -3,8 +3,8 @@
     import type { LoginScene } from "../../Phaser/Login/LoginScene";
     import { LoginSceneName } from "../../Phaser/Login/LoginScene";
     import { MAX_USERNAME_LENGTH } from "../../Enum/EnvironmentVariable";
-    import logoImg from "../images/logo.svg";
-    import poweredByWorkAdventureImg from "../images/Powered_By_WorkAdventure_Big.png";
+    import logoImg from "../images/logo.png";
+    import poweredByWorkAdventureImg from "../images/powered-by-workadventure-big.png";
     import bgMap from "../images/map-exemple.png";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { LL, locale } from "../../../i18n/i18n-svelte";
