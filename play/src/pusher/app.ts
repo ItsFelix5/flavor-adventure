@@ -73,7 +73,7 @@ class App {
         //this.app.set_error_handler(globalErrorHandler);
 
         let path: string;
-        if (fs.existsSync("dist/public")) {
+        if (process.env.NODE_ENV === "production" && fs.existsSync("dist/public")) {
             // In prod mode
             path = "dist/public";
         } else if (fs.existsSync("public")) {

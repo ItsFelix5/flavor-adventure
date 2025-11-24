@@ -296,6 +296,10 @@ export const EnvironmentVariables = z.object({
     // Chat logging
     CHAT_LOG_SECRET: z.string().optional().describe("Secret token for authenticating chat log requests"),
 
+    // Hack Club OAuth
+    HACK_CLUB_CLIENT_ID: z.string().optional().describe("Hack Club OAuth Client ID"),
+    HACK_CLUB_CLIENT_SECRET: z.string().optional().describe("Hack Club OAuth Client Secret"),
+
     // PostgreSQL database connection (can use DATABASE_URL or individual vars)
     DATABASE_URL: z.string().optional().describe("PostgreSQL connection string (postgresql://user:pass@host:port/db)"),
     POSTGRES_URL: z.string().optional().describe("PostgreSQL connection string (alternative to DATABASE_URL)"),
