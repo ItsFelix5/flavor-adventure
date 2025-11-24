@@ -1,3 +1,4 @@
+import { AvailabilityStatus } from "@workadventure/messages";
 import { Readable, derived, get, writable } from "svelte/store";
 import { RemoteVideoTrack } from "livekit-client";
 import { LayoutMode } from "../WebRtc/LayoutManager";
@@ -22,12 +23,14 @@ import {
     requestedCameraState,
     requestedMicrophoneState,
     silentStore,
+    inJitsiStore,
 } from "./MediaStore";
 import { currentPlayerWokaStore } from "./CurrentPlayerWokaStore";
 import { screenShareStreamElementsStore, videoStreamElementsStore } from "./PeerStore";
 import { windowSize } from "./CoWebsiteStore";
 import { muteMediaStreamStore } from "./MuteMediaStreamStore";
 import { isLiveStreamingStore } from "./IsStreamingStore";
+import { shouldCameraBeEnabledStore } from "./ShouldCameraBeEnabledStore";
 
 //export type Streamable = RemotePeer | ScreenSharingLocalMedia | JitsiTrackStreamWrapper;
 
@@ -92,20 +95,25 @@ const localstreamStoreValue = derived(localStreamStore, (myLocalStream) => {
 
 const mutedLocalStream = muteMediaStreamStore(localstreamStoreValue);
 
-export const myCameraPeerStore: Readable<VideoBox> = derived([LL], ([$LL]) => {
-    const streamable = {
-        uniqueId: "-1",
-        media: {
-            type: "webrtc" as const,
-            streamStore: mutedLocalStream,
-            isBlocked: writable(false),
-        },
-        volumeStore: localVolumeStore,
-        hasVideo: derived(
-            mediaStreamConstraintsStore,
-            ($mediaStreamConstraintsStore) => $mediaStreamConstraintsStore.video !== false
-        ),
-        // hasAudio = true because the webcam has a microphone attached and could potentially play sound
+export const myCameraPeerStore: Readable<VideoBox> = derived(
+    [LL, shouldCameraBeEnabledStore, mediaStreamConstraintsStore],
+    ([$LL, $shouldCameraBeEnabledStore, $mediaStreamConstraintsStore]) => {
+        const hasVideo = $shouldCameraBeEnabledStore && $mediaStreamConstraintsStore.video !== false;
+
+        const streamable = {
+            uniqueId: "-1",
+            media: {
+                type: "webrtc" as const,
+                streamStore: mutedLocalStream,
+                isBlocked: writable(false),
+            },
+            volumeStore: localVolumeStore,
+            hasVideo: derived(
+                [shouldCameraBeEnabledStore, mediaStreamConstraintsStore],
+                ([$shouldCameraBeEnabledStore, $mediaStreamConstraintsStore]) =>
+                    $shouldCameraBeEnabledStore && $mediaStreamConstraintsStore.video !== false
+            ),
+            // hasAudio = true because the webcam has a microphone attached and could potentially play sound
         hasAudio: writable(true),
         isMuted: derived(requestedMicrophoneState, (micState) => !micState),
         statusStore: writable("connected" as const),
@@ -143,6 +151,7 @@ function createStreamableCollectionStore(): Readable<Map<string, VideoBox>> {
             requestedCameraState,
             windowSize,
             isLiveStreamingStore,
+            inJitsiStore,
         ],
         (
             [
@@ -157,6 +166,7 @@ function createStreamableCollectionStore(): Readable<Map<string, VideoBox>> {
                 $requestedCameraState,
                 $windowSize,
                 $isLiveStreamingStore,
+                $inJitsiStore,
             ] /*, set*/
         ) => {
             const peers = new Map<string, VideoBox>();
@@ -175,6 +185,16 @@ function createStreamableCollectionStore(): Readable<Map<string, VideoBox>> {
                 // Are we the only one to display video AND are we not publishing a video stream? If so, let's hide the video.
                 // Are we the only one to display video AND we are on a small screen? If so, let's hide the video (because the webcam takes space and makes iPhones laggy when it starts)
                 if (!$isLiveStreamingStore && (!$requestedCameraState || $windowSize.width < 768)) {
+                    shouldAddMyCamera = false;
+                }
+
+                // We only want to display the camera if we are in a Jitsi call or in a proximity bubble (with other people)
+                if (
+                    !$inJitsiStore &&
+                    $videoStreamElementsStore.length === 0 &&
+                    $screenShareStreamElementsStore.length === 0 &&
+                    $scriptingVideoStore.size === 0
+                ) {
                     shouldAddMyCamera = false;
                 }
 

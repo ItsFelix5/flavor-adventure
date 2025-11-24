@@ -8,11 +8,11 @@ const camera: BaseTranslation = {
     disabled: "Disabled",
     notRecommended: "Not recommended",
     enable: {
-        title: "Turn on your camera and microphone",
-        start: "Welcome to our audio and video device configuration page! Find the tools here to enhance your online experience. Adjust settings to your preferences to address any potential issues. Ensure your hardware is properly connected and up to date. Explore and test different configurations to find what works best for you.",
+        title: "Set up optional camera and microphone (you can do this later)",
+        start: "Flavortown is a social experience, it's totally optional but much better with video and audio!",
     },
     help: {
-        title: "Camera / Microphone access needed",
+        title: "Camera / Microphone access",
         permissionDenied: "Permission denied",
         content: "You must allow camera and microphone access in your browser.",
         firefoxContent:
@@ -38,7 +38,7 @@ const camera: BaseTranslation = {
         preparingYouNetworkGuide: '"Preparing your network" guide',
         refresh: "Refresh",
         continue: "Continue",
-        newDeviceDetected: "New device detected {device} 🎉 Switch? [SPACE]",
+        newDeviceDetected: "New device detected {device} :) Switch? [SPACE]",
     },
     my: {
         silentZone: "Silent zone",

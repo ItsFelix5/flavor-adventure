@@ -302,6 +302,12 @@ export const isSpeakerStore = writable(false);
 export const inLivekitStore = writable(false);
 export const isListenerStore = writable(false);
 
+/**
+ * A store allowing to enable/disable the camera based on the context (Jitsi, proximity meeting, etc.)
+ * This is updated by the ShouldCameraBeEnabledStore.
+ */
+export const cameraAllowedByContextStore = writable(true);
+
 export const requestedStatusStore: Writable<RequestedStatus | null> = writable(localUserStore.getRequestedStatus());
 
 export const inCowebsiteZone = derived(
@@ -383,6 +389,7 @@ export const mediaStreamConstraintsStore = derived(
         cameraEnergySavingStore,
         availabilityStatusStore,
         batchGetUserMediaStore,
+        cameraAllowedByContextStore,
     ],
     (
         [
@@ -398,6 +405,7 @@ export const mediaStreamConstraintsStore = derived(
             $cameraEnergySavingStore,
             $availabilityStatusStore,
             $batchGetUserMediaStore,
+            $cameraAllowedByContextStore,
         ],
         set
     ) => {
@@ -411,6 +419,10 @@ export const mediaStreamConstraintsStore = derived(
 
         // Disable webcam if the user requested so
         if ($requestedCameraState === false) {
+            currentVideoConstraint = false;
+        }
+
+        if ($cameraAllowedByContextStore === false) {
             currentVideoConstraint = false;
         }
 
