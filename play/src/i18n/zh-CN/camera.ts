@@ -37,7 +37,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     menu: {
         moreAction: "更多操作",
         closeMenu: "关闭菜单",
-        senPrivateMessage: "发送私信 (即将推出)",
+        sendPrivateMessage: "发送私信 (即将推出)",
         kickoffUser: "踢出用户",
         muteAudioUser: "静音",
         muteAudioEveryBody: "静音所有人",

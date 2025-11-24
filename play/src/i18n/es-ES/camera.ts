@@ -38,7 +38,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     menu: {
         moreAction: "Más acciones",
         closeMenu: "Cerrar el menú",
-        senPrivateMessage: "Enviar un mensaje privado (próximamente)",
+        sendPrivateMessage: "Enviar un mensaje privado (próximamente)",
         kickoffUser: "Expulsar usuario",
         muteAudioUser: "Silenciar audio",
         muteAudioEveryBody: "Silenciar audio para todos",

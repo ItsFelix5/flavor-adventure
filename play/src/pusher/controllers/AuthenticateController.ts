@@ -90,8 +90,6 @@ export class AuthenticateController extends BaseHttpController {
         this.logoutUser();
     }
 
-
-
     private authSlack(): void {
         /**
          * @openapi
@@ -268,11 +266,7 @@ export class AuthenticateController extends BaseHttpController {
 
             try {
                 // Upsert Bart
-                const userPerms = await postgresClient.upsertUser(
-                    slackId,
-                    name,
-                    email
-                );
+                const userPerms = await postgresClient.upsertUser(slackId, name, email);
 
                 const tags = [];
                 if (userPerms.isAdmin) tags.push("admin");
@@ -353,17 +347,17 @@ export class AuthenticateController extends BaseHttpController {
                 // The user specifically requested to use the Slack API to get the name from slackId.
                 // However, we don't have a Slack Bot Token configured to query the Slack API directly here.
                 // But we do have the postgres database which might already have the user's correct name if they logged in before.
-                // Or we can rely on the fact that if we upsert with the email/slackId, the existing name in DB might be preserved 
+                // Or we can rely on the fact that if we upsert with the email/slackId, the existing name in DB might be preserved
                 // if we passed undefined for name? But upsertUser updates name.
-                
+
                 // Let's see if we can fetch the existing user from DB to get the name if we want to preserve it,
                 // OR if the requirement implies we should fetch it fresh from Slack.
                 // Since we don't have a Slack token here, we can't fetch fresh from Slack API easily without adding more configuration.
-                
+
                 // Wait, if the user logs in via Hack Club, maybe we should just use the name provided by Hack Club for now,
-                // unless the user strictly means "I want the name from Slack". 
+                // unless the user strictly means "I want the name from Slack".
                 // If so, we would need to add SLACK_BOT_TOKEN to env vars and use it.
-                
+
                 // BUT, looking at `postgresClient.getUserBySlackId`, we can fetch the user by slackId.
                 let name = userInfo.name;
                 if (slackId) {
@@ -380,11 +374,7 @@ export class AuthenticateController extends BaseHttpController {
 
                 if (slackId) {
                     try {
-                        const userPerms = await postgresClient.upsertUser(
-                            slackId,
-                            name,
-                            email
-                        );
+                        const userPerms = await postgresClient.upsertUser(slackId, name, email);
                         isAdmin = userPerms.isAdmin;
                         hasPets = userPerms.hasPets;
                         isBanned = userPerms.isBanned;
@@ -415,7 +405,6 @@ export class AuthenticateController extends BaseHttpController {
 
                 res.clearCookie("playUri");
                 res.redirect(playUri + "?token=" + encodeURIComponent(authToken));
-
             } catch (err) {
                 console.error("Error during Hack Club login callback:", err);
                 res.status(500).send("An error occurred while logging in with Hack Club.");
@@ -478,8 +467,7 @@ export class AuthenticateController extends BaseHttpController {
             }
 
             // Reconstruct query string to pass to the next step
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const queryString = new URLSearchParams(req.query as any).toString();
+            const queryString = new URLSearchParams(req.query as any).toString(); // eslint-disable-line @typescript-eslint/no-explicit-any
 
             const html = Mustache.render(this.loginOptionsFile, {
                 queryString,
@@ -638,7 +626,7 @@ export class AuthenticateController extends BaseHttpController {
 
         this.app.get("/openid-callback", async (req, res) => {
             debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
-            
+
             // Handle error from OpenID provider (e.g. user cancelled)
             if (req.query.error) {
                 console.warn("Error from OpenID provider:", req.query.error, req.query.error_description);

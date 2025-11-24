@@ -55,7 +55,7 @@ type UpgradeFailedInvalidTexture = {
 export type UpgradeFailedData = UpgradeFailedErrorData | UpgradeFailedInvalidData | UpgradeFailedInvalidTexture;
 
 export function isUpgradeFailedData(data: SocketData | UpgradeFailedData): data is UpgradeFailedData {
-    return "reason" in data && (data.reason === "tokenInvalid" || data.reason === "invalidVersion" || data.reason === "error" || data.reason === "invalidTexture");
+    return "reason" in data;
 }
 
 export class IoSocketController {
@@ -576,24 +576,25 @@ export class IoSocketController {
                     const socketData = ws.getUserData();
                     debug("WebSocket connection established");
                     if (socketData.rejected === true) {
+                        const failedData = socketData as UpgradeFailedData;
                         const socket = ws as SocketUpgradeFailed;
                         // If there is a room in the error, let's check if we need to clean it.
-                        if ("roomId" in socketData) {
-                            socketManager.deleteRoomIfEmptyFromId(socketData.roomId);
+                        if ("roomId" in failedData) {
+                            socketManager.deleteRoomIfEmptyFromId(failedData.roomId);
                         }
 
-                        if (socketData.reason === tokenInvalidException) {
+                        if (failedData.reason === tokenInvalidException) {
                             socketManager.emitTokenExpiredMessage(socket);
-                        } else if (socketData.reason === "error") {
-                            socketManager.emitErrorScreenMessage(socket, socketData.error);
-                        } else if (socketData.reason === "invalidTexture") {
-                            if (socketData.entityType === "character") {
+                        } else if (failedData.reason === "error") {
+                            socketManager.emitErrorScreenMessage(socket, failedData.error);
+                        } else if (failedData.reason === "invalidTexture") {
+                            if (failedData.entityType === "character") {
                                 socketManager.emitInvalidCharacterTextureMessage(socket);
                             } else {
                                 socketManager.emitInvalidCompanionTextureMessage(socket);
                             }
                         } else {
-                            socketManager.emitConnectionErrorMessage(socket, socketData.message.toString());
+                            socketManager.emitConnectionErrorMessage(socket, failedData.message.toString());
                         }
                         ws.end(1000, "Error message sent");
                         return;

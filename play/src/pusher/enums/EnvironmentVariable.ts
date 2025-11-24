@@ -146,6 +146,9 @@ export const ENABLE_SAY: boolean = env.ENABLE_SAY || true;
 // Chat logging
 export const CHAT_LOG_SECRET: string | undefined = env.CHAT_LOG_SECRET;
 
+export const HACK_CLUB_CLIENT_ID = env.HACK_CLUB_CLIENT_ID;
+export const HACK_CLUB_CLIENT_SECRET = env.HACK_CLUB_CLIENT_SECRET;
+
 // Front container:
 export const FRONT_ENVIRONMENT_VARIABLES: FrontConfigurationInterface = {
     DEBUG_MODE: env.DEBUG_MODE,
@@ -213,8 +216,8 @@ export const FRONT_ENVIRONMENT_VARIABLES: FrontConfigurationInterface = {
     MATRIX_ADMIN_USER,
     MATRIX_DOMAIN,
     ENABLE_SAY: env.ENABLE_SAY || true,
+    CHAT_LOG_SECRET,
     GRPC_MAX_MESSAGE_SIZE: env.GRPC_MAX_MESSAGE_SIZE,
-    CHAT_LOG_SECRET: env.CHAT_LOG_SECRET,
     HACK_CLUB_CLIENT_ID: env.HACK_CLUB_CLIENT_ID,
     HACK_CLUB_CLIENT_SECRET: env.HACK_CLUB_CLIENT_SECRET,
 };

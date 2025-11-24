@@ -41,7 +41,7 @@ const camera: DeepPartial<Translation["camera"]> = {
     menu: {
         moreAction: "Dalše akcije",
         closeMenu: "Meny zacyniś",
-        senPrivateMessage: "Pśewatne powěsće posłaś (Pśichadźe)",
+        sendPrivateMessage: "Pśewatne powěsće posłaś (Pśichadźe)",
         kickoffUser: "Benutzer rauswerfen",
         muteAudioUser: "Audio stummschalten",
         muteAudioEveryBody: "Mute audio for everybody",

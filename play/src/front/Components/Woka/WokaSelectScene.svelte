@@ -11,9 +11,9 @@
     import WokaImage from "./WokaImage.svelte";
 
     // @ts-ignore: These exports are used by the parent component
-    export const customize: (() => void) | undefined = undefined;
+    export let customize: (() => void) | undefined = undefined;
     // @ts-ignore: These exports are used by the parent component
-    export const saveAndContinue: ((texturesId: string[]) => void) | undefined = undefined;
+    export let saveAndContinue: ((texturesId: string[]) => void) | undefined = undefined;
 
     let wokaData: WokaData | null = null;
     let currentWokaCollection: WokaCollection | null = null;
@@ -179,11 +179,13 @@
         if (!wokaData || !currentWokaCollection) return;
         if (event.key === "Enter" && enterPressed) {
             enterPressed = false;
-            saveAndContinue([selectedWokaTextureId["woka"]]); // Save and continue when Enter is pressed
+            saveAndContinue?.([selectedWokaTextureId["woka"]]); // Save and continue when Enter is pressed
         }
     }
 
     onMount(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        customize;
         loadWokaData().catch((err) => {
             console.error("Error in onMount while loading Woka data:", err);
         });
@@ -283,7 +285,7 @@
                 </button> -->
                 <button
                     class="selectCharacterSceneFormSubmit w-full px-4 py-3 bg-secondary text-white rounded hover:bg-secondary-600"
-                    on:click={() => saveAndContinue([selectedWokaTextureId["woka"]])}
+                    on:click={() => saveAndContinue?.([selectedWokaTextureId["woka"]])}
                 >
                     {$LL.woka.selectWoka.continue()}
                 </button>

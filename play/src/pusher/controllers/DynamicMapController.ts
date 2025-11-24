@@ -15,6 +15,11 @@ export class DynamicMapController extends BaseHttpController {
         app.get("/unique-ui/:uuid/UI.tmj", this.serveUniqueUI.bind(this));
     }
 
+    // @ts-ignore: BaseHttpController defines abstract routes() but we don't use it here as we register in constructor
+    routes(): void {
+        // Implementation not needed as routes are registered in constructor
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private fixExitUrls(layers: any[], mapsHost: string): void {
         for (const layer of layers) {
