@@ -31,7 +31,7 @@ export class FrontController extends BaseHttpController {
         super(app);
 
         let indexPath: string;
-        if (fs.existsSync("dist/public/index.html")) {
+        if (process.env.NODE_ENV === "production" && fs.existsSync("dist/public/index.html")) {
             // In prod mode
             indexPath = "dist/public/index.html";
         } else if (fs.existsSync("index.html")) {
@@ -42,7 +42,7 @@ export class FrontController extends BaseHttpController {
         }
 
         let redirectToAdminPath: string;
-        if (fs.existsSync("dist/public/redirectToAdmin.html")) {
+        if (process.env.NODE_ENV === "production" && fs.existsSync("dist/public/redirectToAdmin.html")) {
             // In prod mode
             redirectToAdminPath = "dist/public/redirectToAdmin.html";
         } else if (fs.existsSync("redirectToAdmin.html")) {
@@ -210,9 +210,9 @@ export class FrontController extends BaseHttpController {
             debug(`FrontController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
             res.json({
                 domain: process.env.PUSHER_URL,
-                name: process.env.SERVER_NAME || "WorkAdventure Server",
-                motd: process.env.SERVER_MOTD || "A WorkAdventure Server",
-                icon: process.env.SERVER_ICON || process.env.PUSHER_URL + "/static/images/favicons/icon-512x512.png",
+                name: process.env.SERVER_NAME || "FlavorTown Server",
+                motd: process.env.SERVER_MOTD || "A FlavorTown Server",
+                icon: process.env.SERVER_ICON || process.env.PUSHER_URL + "/static/images/favicons/favicon-512x512.svg",
                 version: version + (process.env.NODE_ENV !== "production" ? "-dev" : ""),
             });
             return;

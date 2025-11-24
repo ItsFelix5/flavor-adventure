@@ -23,14 +23,14 @@ export const MetaTagsDefaultValue: RequiredMetaTagsData = {
         {
             rel: "icon",
             sizes: "512x512",
-            src: "/static/images/favicons/favicon-512x512.svg",
+            src: process.env.SERVER_ICON || "/static/images/favicons/favicon-512x512.svg",
         },
     ],
     manifestIcons: [
         {
-            src: "/static/images/favicons/favicon-512x512.svg",
+            src: process.env.SERVER_ICON || "/static/images/favicons/favicon-512x512.svg",
             sizes: "512x512",
-            type: "image/svg",
+            type: "image/svg+xml",
         },
     ],
     appName: "WorkAdventure",

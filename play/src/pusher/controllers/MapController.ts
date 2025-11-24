@@ -74,9 +74,17 @@ export class MapController extends BaseHttpController {
                 );
 
                 const mapDetailsParsed = isMapDetailsData.safeParse(mapDetails);
-                if (DISABLE_ANONYMOUS && mapDetailsParsed.success) {
+                if (mapDetailsParsed.success) {
                     mapDetails = mapDetailsParsed.data;
-                    mapDetails.authenticationMandatory = true;
+                    if (DISABLE_ANONYMOUS) {
+                        mapDetails.authenticationMandatory = true;
+                    } else {
+                        const isAllowed =
+                            query.playUri.includes("courtyard.tmj") || query.playUri.includes("UI.tmj");
+                        if (!isAllowed) {
+                            mapDetails.authenticationMandatory = true;
+                        }
+                    }
                 }
 
                 res.json(mapDetails);

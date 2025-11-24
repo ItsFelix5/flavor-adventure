@@ -4,6 +4,7 @@
     import { SvelteComponentTyped } from "svelte";
     import { silentStore } from "../../Stores/MediaStore";
 
+    import { localUserStore } from "../../Connection/LocalUserStore";
     import { gameManager } from "../../Phaser/Game/GameManager";
     import { chatVisibilityStore } from "../../Stores/ChatStore";
     import {
@@ -106,6 +107,7 @@
                 <div>
                     <!-- ACTION WRAPPER : CAM & MIC -->
                     <div class="group/hardware flex items-center relative">
+                        {#if localUserStore.getLocalUser()?.email}
                         {#if !$inExternalServiceStore && $proximityMeetingStore && $myMicrophoneStore}
                             <MicrophoneMenuItem />
                         {/if}
@@ -199,6 +201,7 @@
                                     </div>
                                 </div>
                             {/if}
+                        {/if}
                         {/if}
 
                         <!-- NAV : SCREENSHARING END -->

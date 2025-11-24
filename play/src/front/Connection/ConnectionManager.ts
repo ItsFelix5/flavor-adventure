@@ -288,6 +288,10 @@ class ConnectionManager {
             urlManager.pushRoomIdToUrl(this._currentRoom);
         } else if (this.connexionType === GameConnexionTypes.room || this.connexionType === GameConnexionTypes.empty) {
             this.authToken = localUserStore.getAuthToken();
+            // Ensure LocalUserStore is synced so isLogged() works correctly
+            if (this.authToken) {
+                localUserStore.setAuthToken(this.authToken);
+            }
 
             let roomPath: string;
             if (this.connexionType === GameConnexionTypes.empty) {
@@ -321,6 +325,16 @@ class ConnectionManager {
             //before set token of user we must load room and all information. For example the mandatory authentication could be require on current room
             this._currentRoom = await Room.createRoom(roomPathUrl);
 
+            // Check if the map is allowed for unauthenticated users
+            const isAllowedMap = roomPathUrl.pathname.includes("courtyard.tmj") || roomPathUrl.pathname.includes("UI.tmj");
+            if (!localUserStore.isLogged() && !isAllowedMap && !this._currentRoom.authenticationMandatory) {
+                const redirect = this.loadOpenIDScreen(false);
+                if (redirect === null) {
+                    throw new Error("Access denied for anonymous user and unable to redirect to login.");
+                }
+                return redirect;
+            }
+
             //Set last room visited! (connected or not, must be saved in localstorage and cache API)
             //use href to keep # value
             await localUserStore.setLastRoomUrl(roomPathUrl.href);
@@ -330,10 +344,13 @@ class ConnectionManager {
                 if (!this._currentRoom.authenticationMandatory) {
                     await this.anonymousLogin();
 
-                    const characterTextures = localUserStore.getCharacterTextures();
-                    if (characterTextures === null || characterTextures.length === 0) {
-                        nextScene = "selectCharacterScene";
-                    }
+                    // Force ghost texture for anonymous users
+                    localUserStore.setCharacterTextures(["ghost"]);
+                    // Disable proximity meeting for anonymous users
+                    // This import needs to be at top or dynamically imported to avoid circular deps if any
+                    const { mediaManager } = await import("../WebRtc/MediaManager");
+                    mediaManager.disableProximityMeeting();
+                    nextScene = "gameScene";
                 } else {
                     const redirect = this.loadOpenIDScreen(false);
                     if (redirect === null) {
@@ -361,6 +378,12 @@ class ConnectionManager {
                         };
                     }
                     if (response.status === "ok") {
+                        // Disable proximity meeting for existing anonymous users
+                        if (!localUserStore.isLogged()) {
+                            const { mediaManager } = await import("../WebRtc/MediaManager");
+                            mediaManager.disableProximityMeeting();
+                        }
+
                         if (response.isCharacterTexturesValid === false) {
                             nextScene = "selectCharacterScene";
                         } else if (response.isCompanionTextureValid === false) {
@@ -388,6 +411,7 @@ class ConnectionManager {
                             return redirect;
                         } else {
                             await this.anonymousLogin();
+                            localUserStore.setCharacterTextures(["ghost"]);
                         }
                     } else {
                         Sentry.captureException(err);
