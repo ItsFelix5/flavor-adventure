@@ -93,7 +93,7 @@ WA.onInit().then(async () => {
     console.log('Creating iframe with URL:', PROXY_URL);
 
 
-    website = await WA.ui.website.open({
+    /*website = await WA.ui.website.open({
         url: PROXY_URL,
         position: {
             vertical: 'top',
@@ -113,7 +113,7 @@ WA.onInit().then(async () => {
     });
 
     console.log('Iframe website created:', website);
-    console.log('Website object keys:', Object.keys(website));
+    console.log('Website object keys:', Object.keys(website));*/
     
     // no interaction on tut
     WA.controls.disablePlayerProximityMeeting();
