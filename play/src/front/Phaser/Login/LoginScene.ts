@@ -8,6 +8,7 @@ import { NameNotValidError, NameTooLongError } from "../../Exception/NameError";
 import { hasCapability } from "../../Connection/Capabilities";
 import { ResizableScene } from "./ResizableScene";
 import { SelectCharacterSceneName } from "./SelectCharacterScene";
+import { EnableCameraSceneName } from "./EnableCameraScene";
 
 export const LoginSceneName = "LoginScene";
 
@@ -65,7 +66,19 @@ export class LoginScene extends ResizableScene {
         }
 
         this.scene.stop(LoginSceneName);
-        gameManager.tryResumingGame(SelectCharacterSceneName);
+
+        if (localUserStore.isLogged()) {
+            gameManager.tryResumingGame(SelectCharacterSceneName);
+        } else {
+            const preferredAudioInputDeviceId = localUserStore.getPreferredAudioInputDevice();
+            const preferredVideoInputDeviceId = localUserStore.getPreferredVideoInputDevice();
+            if (preferredVideoInputDeviceId === undefined || preferredAudioInputDeviceId === undefined) {
+                gameManager.tryResumingGame(EnableCameraSceneName);
+            } else {
+                gameManager.tryResumingGame(gameManager.currentStartedRoom.key);
+            }
+        }
+
         this.scene.remove(LoginSceneName);
         loginSceneVisibleStore.set(false);
     }
