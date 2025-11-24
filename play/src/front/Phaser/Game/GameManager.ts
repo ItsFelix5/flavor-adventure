@@ -74,6 +74,12 @@ export class GameManager {
         this.startRoom = result.room;
         this.loadMap(this.startRoom);
 
+        // If the user is not logged in, we should not rely on the locally stored player name.
+        // This is to prevent anonymous users' names from persisting across sessions.
+        if (!localUserStore.isLogged()) {
+            this.playerName = null;
+        }
+
         const preferredAudioInputDeviceId = localUserStore.getPreferredAudioInputDevice();
         const preferredVideoInputDeviceId = localUserStore.getPreferredVideoInputDevice();
 
@@ -81,10 +87,7 @@ export class GameManager {
         console.info("Preferred video input device: " + preferredVideoInputDeviceId);
 
         //If player name was not set show login scene with player name
-        if (
-            !this.playerName ||
-            (this.startRoom.authenticationMandatory && !localUserStore.getLocalUser()?.email)
-        ) {
+        if (!this.playerName || (this.startRoom.authenticationMandatory && !localUserStore.getLocalUser()?.email)) {
             return LoginSceneName;
         } else if (result.nextScene === "selectCharacterScene" && localUserStore.isLogged()) {
             // Only show character selection if user is logged in

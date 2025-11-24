@@ -57,9 +57,9 @@ export class LoginScene extends ResizableScene {
         const didSaveName = await connectionManager.saveName(name);
         gameManager.setPlayerName(name);
         if (!didSaveName) {
-            // Only save the name if the user is not logged in
-            // If the user is logged in, the name will be fetched from the server. No need to save it locally.
-            if (!localUserStore.isLogged() || !hasCapability("api/save-name")) {
+            // Only save the name locally if the user is logged in but the server capability is missing.
+            // We do NOT want to persist names for anonymous users.
+            if (localUserStore.isLogged() && !hasCapability("api/save-name")) {
                 localUserStore.setName(name);
             }
         }
