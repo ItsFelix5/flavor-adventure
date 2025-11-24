@@ -1,7 +1,6 @@
 import fs from "fs";
 import type { Application, Request, Response } from "express";
 import { postgresClient } from "../services/PostgresClient";
-import path from "path";
 import { BaseHttpController } from "./BaseHttpController";
 
 export class DynamicMapController extends BaseHttpController {
