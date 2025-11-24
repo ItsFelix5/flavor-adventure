@@ -192,15 +192,17 @@
                         <ProfilIcon />
                     </ActionBarButton>
                 {/if}
-                <ActionBarButton
-                    label={$LL.actionbar.woka()}
-                    on:click={() => {
-                        openEditSkinScene();
-                        analyticsClient.editWoka();
-                    }}
-                >
-                    <Woka userId={-1} placeholderSrc="" customWidth="26px" />
-                </ActionBarButton>
+                {#if $userIsConnected}
+                    <ActionBarButton
+                        label={$LL.actionbar.woka()}
+                        on:click={() => {
+                            openEditSkinScene();
+                            analyticsClient.editWoka();
+                        }}
+                    >
+                        <Woka userId={-1} placeholderSrc="" customWidth="26px" />
+                    </ActionBarButton>
+                {/if}
                 {#if $userHasPetsStore}
                     <ActionBarButton
                         label={$LL.actionbar.companion()}
