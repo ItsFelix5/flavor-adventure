@@ -51,7 +51,7 @@ const camera: BaseTranslation = {
     menu: {
         moreAction: "More actions",
         closeMenu: "Close menu",
-        senPrivateMessage: "Send a private message (coming soon)",
+        sendPrivateMessage: "Send a private message (coming soon)",
         kickoffUser: "Kick off user",
         muteAudioUser: "Mute audio",
         muteAudioEveryBody: "Mute audio for everybody",

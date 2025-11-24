@@ -203,7 +203,7 @@ class App {
 
     public async init() {
         const companionListController = new CompanionListController(this.app, jwtTokenManager);
-        const wokaListController = new
+        const wokaListController = new WokaListController(this.app, jwtTokenManager);
 
         try {
             const capabilities = await adminApi.initialise();
