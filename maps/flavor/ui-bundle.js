@@ -42,11 +42,11 @@ WA.onInit().then(async () => {
              host = host.replace('play.', 'maps.');
         }
         
-        PROXY_URL = `${protocol}//${host}/flavor/scroll-proxy.html`;
+        PROXY_URL = `${protocol}//${host}/flavor/scroll-proxy.html?v=${Date.now()}`;
         console.log('Derived PROXY_URL:', PROXY_URL);
     } catch (e) {
         console.error('Failed to derive PROXY_URL from room ID:', e);
-        PROXY_URL = 'https://flavor-adventure.hackclub.com/flavor/scroll-proxy.html';
+        PROXY_URL = 'https://flavor-adventure.hackclub.com/flavor/scroll-proxy.html?v=' + Date.now();
     }
     
     // serve on /unique to avoid player overlap

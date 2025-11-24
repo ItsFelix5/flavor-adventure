@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import Logo from "~/../../electron/assets/icons/logo.svg";
+    import Logo from "~/../../electron/assets/icons/logo.png";
     import { api } from "~/lib/ipc";
 
     let version = "";

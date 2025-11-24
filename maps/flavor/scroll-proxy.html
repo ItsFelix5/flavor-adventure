@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scroll Proxy</title>
+    <title>Flavor Adventure</title>
     <style>
         * {
             margin: 0;
@@ -16,10 +16,10 @@
             height: 100%;
             overflow: hidden;
             /* Background image will be set dynamically to ensure we hit the play host for /static assets */
-            background-color: #0b0b0b;
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
+            background-color: #f3e5c9;
+            background-size: auto;
+            background-position: top left;
+            background-repeat: repeat;
         }
         
         #content-iframe {
@@ -55,7 +55,7 @@
             try {
                 const host = window.location.hostname.replace(/^maps\./,'play.');
                 const protocol = window.location.protocol === 'http:' ? 'http:' : 'https:';
-                const imgUrl = protocol + '//' + host + '/static/images/back.png';
+                const imgUrl = protocol + '//' + host + '/static/images/bg-tile.png';
                 document.body.style.backgroundImage = 'url(' + imgUrl + ')';
             } catch (e) {
                 console.warn('Failed to set dynamic background', e);
@@ -115,11 +115,11 @@
         
         function createScrollableContent() {
             // Calculate correct image URL based on environment
-            let imgUrl = '/static/images/back.png';
+            let imgUrl = '/static/images/bg-tile.png';
             try {
                 const host = window.location.hostname.replace(/^maps\./, 'play.');
                 const protocol = window.location.protocol === 'http:' ? 'http:' : 'https:';
-                imgUrl = `${protocol}//${host}/static/images/back.png`;
+                imgUrl = `${protocol}//${host}/static/images/bg-tile.png`;
             } catch (e) {
                 console.warn('Failed to determine dynamic background URL', e);
             }
@@ -130,10 +130,12 @@
                     font-family: Arial, sans-serif; 
                     line-height: 1.6; 
                     user-select: none;
+                    background-color: #f3e5c9;
+                    color: #000000;
                     background-image: url('${imgUrl}');
-                    background-size: cover;
-                    background-position: center;
-                    background-repeat: no-repeat;
+                    background-size: auto;
+                    background-position: top left;
+                    background-repeat: repeat;
                     min-height: 100vh;
                 ">
                     <h1 style="color: #ff6b35; margin-bottom: 30px;"> Welcome to Flavortown!</h1>
@@ -154,20 +156,20 @@
                     </div>
                     
             
-                    <section style="margin-bottom: 20px; padding: 25px; background: '#fff5f0'}; border-left: 4px solid #ff6b35; border-radius: 4px; min-height: 32px;">
+                    <section style="margin-bottom: 20px; padding: 25px; background: #fff5f0; border-left: 4px solid #ff6b35; border-radius: 4px; min-height: 32px;">
                         <h3 style="color: #ff6b35; margin-bottom: 15px;"> Rule 1:</h3>
                         <p style="color: #666; margin-bottom: 10px;">
                             Be thoughtful! <br> Messages sent in public are monitored and can result in a ban from flavortown and slack if they violate code of conduct.
                         </p>
                     </section>
-                    <section style="margin-bottom: 20px; padding: 25px; background: '#fff'}; border-left: 4px solid #ff6b35; border-radius: 4px; min-height: 32px;">
+                    <section style="margin-bottom: 20px; padding: 25px; background: #fff; border-left: 4px solid #ff6b35; border-radius: 4px; min-height: 32px;">
                         <h3 style="color: #ff6b35; margin-bottom: 15px;"> Rule 2:</h3>
                         <p style="color: #666; margin-bottom: 10px;">
                             Do not attempt to fraud our code time tracking software (hackatime). No bots, scripting or faking.
                         </p>
                         
                     </section>
-                    <section style="margin-bottom: 20px; padding: 25px; background: '#fff5f0'}; border-left: 4px solid #ff6b35; border-radius: 4px; min-height: 32px;">
+                    <section style="margin-bottom: 20px; padding: 25px; background: #fff5f0; border-left: 4px solid #ff6b35; border-radius: 4px; min-height: 32px;">
                         <h3 style="color: #ff6b35; margin-bottom: 15px;"> Rule 3:</h3>
                         <p style="color: #666; margin-bottom: 10px;">
                             Do not invade spaces to disrupt, if people are working please keep the talk on topic / helpflul.
@@ -203,13 +205,14 @@
                     <li>Avoid destructive behavior:
                     <ul>
                     <li>Derailing: stay on topic; if you want to talk about something else, start a new conversation.</li>
-                    <li>Unconstructive criticism: don't merely condemn the current state of affairs; offer—or at least solicit—suggestions as to how things may be improved.</li>
+                    <li>Unconstructive criticism: don't merely condemn the current stat,e of affairs; offer—or at least solicit—suggestions as to how things may be improved.</li>
                     <li>Snarking (pithy, unproductive, sniping comments)</li>
                     <li>Discussing potentially offensive or sensitive issues; this all too often leads to unnecessary conflict.</li>
                     <li>Microaggressions: brief and commonplace verbal, behavioral, and environmental indignities that communicate hostile, derogatory or negative slights and insults to a person or group.</li>
                     </ul>
                     </li>
                     </ul>
+                    <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>        
                 </div>
 
 
