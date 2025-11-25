@@ -266,9 +266,7 @@ class LocalUserStore {
 
     isLogged(): boolean {
         //return this.jwt?.accessToken !== undefined && this.jwt?.accessToken !== null;
-        // dont validate bart!
         const accessToken = this.jwt?.accessToken;
-        if (accessToken === "fake_access_token") return true;
         return accessToken !== undefined && accessToken !== null;
     }
 

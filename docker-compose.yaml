@@ -439,28 +439,6 @@ services:
       USERS_CONFIGURATION_INLINE: |
         [
           {
-            "SubjectId":"1",
-            "Username":"User1",
-            "Password":"pwd",
-            "Claims": [
-              {
-                "Type": "name",
-                "Value": "Bart Forgler",
-                "ValueType": "string",
-              },
-              {
-                "Type": "email",
-                "Value": "bartForgler@hackclub.com",
-                "ValueType": "string"
-              },
-              {
-                "Type": "tags",
-                "Value": "[\"admin\"]",
-                "ValueType": "json"
-              },
-            ]
-          },
-          {
             "SubjectId":"2",
             "Username":"User2",
             "Password":"pwd",

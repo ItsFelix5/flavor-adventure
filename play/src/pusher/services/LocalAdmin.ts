@@ -98,9 +98,7 @@ class LocalAdmin implements AdminInterface {
                 /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
             );
 
-        // Quick fix for Bart Forgler (fake login)
-        const isFakeLogin = accessToken === "fake_access_token";
-        const isAnonymous = (accessToken === undefined && !isEmail) && !isFakeLogin;
+        const isAnonymous = accessToken === undefined && !isEmail;
 
         if (isAnonymous) {
             // Anonymous user
@@ -123,11 +121,7 @@ class LocalAdmin implements AdminInterface {
         } else if (isAnonymous && characterTextureIds[0] === "ghost") {
             // Force valid for ghost anonymous
             isCharacterTexturesValid = true;
-        } else if (
-            !isAnonymous &&
-            characterTextureIds.length === 1 &&
-            characterTextureIds[0] === "ghost"
-        ) {
+        } else if (!isAnonymous && characterTextureIds.length === 1 && characterTextureIds[0] === "ghost") {
             // If the user is NOT anonymous (signed in) but still has the ghost texture (from previous anonymous session),
             // we mark it as INVALID so they are forced to choose a new character.
             isCharacterTexturesValid = false;
