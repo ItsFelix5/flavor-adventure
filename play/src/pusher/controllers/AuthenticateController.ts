@@ -407,7 +407,12 @@ export class AuthenticateController extends BaseHttpController {
                 res.redirect(playUri + "?token=" + encodeURIComponent(authToken));
             } catch (err) {
                 console.error("Error during Hack Club login callback:", err);
-                res.status(500).send("An error occurred while logging in with Hack Club.");
+                if (err instanceof Error) {
+                    debug(err.stack);
+                }
+                res.status(500).send(
+                    "An error occurred while logging in with Hack Club. Please check the server logs for more details."
+                );
             }
         });
     }

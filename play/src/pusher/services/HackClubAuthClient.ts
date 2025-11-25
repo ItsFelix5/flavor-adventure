@@ -1,11 +1,7 @@
 import { v4 } from "uuid";
 import axios from "axios";
 import type { Request, Response } from "express";
-import {
-    HACK_CLUB_CLIENT_ID,
-    HACK_CLUB_CLIENT_SECRET,
-    OPID_CLIENT_REDIRECT_URL,
-} from "../enums/EnvironmentVariable";
+import { HACK_CLUB_CLIENT_ID, HACK_CLUB_CLIENT_SECRET, OPID_CLIENT_REDIRECT_URL } from "../enums/EnvironmentVariable";
 
 export class HackClubAuthClient {
     private readonly authUrl = "https://hca.dinosaurbbq.org/oauth/authorize";
@@ -32,12 +28,12 @@ export class HackClubAuthClient {
             secure: req.secure,
         });
 
-        // Hack Club OAuth doesn't seem to use code_verifier based on the guide, 
+        // Hack Club OAuth doesn't seem to use code_verifier based on the guide,
         // but we'll set it if needed or just ignore it.
-        
+
         // Use HCA specific redirect URL (which we will create endpoint for)
         // But wait, we can probably reuse the existing callback structure if we are careful.
-        // However, since we need to differentiate between providers callback, 
+        // However, since we need to differentiate between providers callback,
         // let's assume we'll use a specific one: /auth/hackclub/callback
         const redirectUri = this.getRedirectUrl();
 
@@ -48,7 +44,7 @@ export class HackClubAuthClient {
         url.searchParams.set("scope", "email name slack_id");
         url.searchParams.set("state", state);
 
-        // Pass playUri via state or cookie? 
+        // Pass playUri via state or cookie?
         // AuthenticateController sets playUri in cookie before redirecting, so we rely on that.
 
         return url.toString();
@@ -66,16 +62,17 @@ export class HackClubAuthClient {
             throw new Error("Hack Club Client ID or Secret not configured");
         }
 
-        const response = await axios.post(this.tokenUrl, {
-            client_id: HACK_CLUB_CLIENT_ID,
-            client_secret: HACK_CLUB_CLIENT_SECRET,
-            redirect_uri: this.getRedirectUrl(),
-            code: code,
-            grant_type: "authorization_code",
-        }, {
+        const params = new URLSearchParams();
+        params.append("client_id", HACK_CLUB_CLIENT_ID);
+        params.append("client_secret", HACK_CLUB_CLIENT_SECRET);
+        params.append("redirect_uri", this.getRedirectUrl());
+        params.append("code", code);
+        params.append("grant_type", "authorization_code");
+
+        const response = await axios.post(this.tokenUrl, params, {
             headers: {
-                "Content-Type": "application/json"
-            }
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
         });
 
         return response.data.access_token;
@@ -94,10 +91,10 @@ export class HackClubAuthClient {
         });
 
         const data = response.data;
-        
+
         // Extract info from the "identity" object if present (as per new response format)
         const identity = data.identity || data;
-        
+
         // Map HCA user info to our structure
         // HCA returns: id, name, email, slack_id, etc. (possibly nested in identity)
         // We want to use slack_id as the primary identifier if available to match Slack login
