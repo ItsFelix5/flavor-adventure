@@ -76,8 +76,9 @@ export class GameManager {
 
         // If the user is not logged in, we should not rely on the locally stored player name.
         // This is to prevent anonymous users' names from persisting across sessions.
+        // We enforce the name "Ghost" for anonymous users.
         if (!localUserStore.isLogged()) {
-            this.playerName = null;
+            this.playerName = "Ghost";
         }
 
         const preferredAudioInputDeviceId = localUserStore.getPreferredAudioInputDevice();

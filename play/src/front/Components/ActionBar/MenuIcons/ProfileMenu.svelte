@@ -181,7 +181,7 @@
                 <ExternalComponents zone="menuTop" />
                 <AvailabilityStatusList statusInformation={getStatusInformation(statusToShow)} />
                 <HeaderMenuItem label={$LL.menu.sub.profile()} />
-                {#if showWokaNameMenuItem()}
+                {#if $userIsConnected && showWokaNameMenuItem()}
                     <ActionBarButton
                         label={$LL.actionbar.profil()}
                         on:click={() => {
