@@ -5,6 +5,7 @@
 const SPLIT_RATIO = 0.5; // TODO: set dynamically to width of screen map does not use
 // Will be set dynamically in WA.onInit
 let PROXY_URL = '';
+let LOGIN_POPUP_URL = '';
 
 let website;
 let lastPlayerY = 0;
@@ -43,10 +44,12 @@ WA.onInit().then(async () => {
         }
         
         PROXY_URL = `${protocol}//${host}/flavor/scroll-proxy.html?v=${Date.now()}`;
+        LOGIN_POPUP_URL = `${protocol}//${host}/flavor/login-popup.html?v=${Date.now()}`;
         console.log('Derived PROXY_URL:', PROXY_URL);
     } catch (e) {
         console.error('Failed to derive PROXY_URL from room ID:', e);
         PROXY_URL = 'https://flavor-adventure.hackclub.com/flavor/scroll-proxy.html?v=' + Date.now();
+        LOGIN_POPUP_URL = 'https://flavor-adventure.hackclub.com/flavor/login-popup.html?v=' + Date.now();
     }
     
     // serve on /unique to avoid player overlap
@@ -243,27 +246,95 @@ WA.onInit().then(async () => {
 
     console.log('Exit debug initialized');
     
-    // Debug: Log all areas on the map
-    console.log('Checking for areas on the map...');
+    const currentPos = await WA.player.getPosition();
+    console.log('Current player position:', currentPos);
     
     // detect on event and check current pos
+    let isInExitZone = false;
+    let exitPopup = undefined;
+    
+    // Death zone logic
+    const DEATH_ZONE_Y = 128; // 
+    let isInDeathZone = false;
+    let deathPopup = undefined;
+
     WA.player.onPlayerMove((event) => {
         const playerY = event.y;
         
+        // Exit logic
+        const inExitZone = (playerY <= (EXIT_AREA_Y + EXIT_AREA_HEIGHT));
         
-        if (playerY >= EXIT_AREA_Y && playerY <= (EXIT_AREA_Y + EXIT_AREA_HEIGHT)) {
-            console.log(`redir`);
-            WA.nav.goToRoom(EXIT_TARGET);
+        if (inExitZone) {
+            if (!isInExitZone) {
+                isInExitZone = true;
+                if (!WA.player.isLogged) {
+                    if (exitPopup === undefined) {
+                        exitPopup = WA.ui.openPopup("popupTarget", "Please log in to exit.", [{
+                            label: "Close",
+                            callback: (popup) => {
+                                popup.close();
+                                exitPopup = undefined;
+                            }
+                        }]);
+                    }
+                } else {
+                    console.log(`redir`);
+                    WA.nav.goToRoom(EXIT_TARGET);
+                }
+            }
+        } else {
+            isInExitZone = false;
+            if (exitPopup) {
+                exitPopup.close();
+                exitPopup = undefined;
+            }
+        }
+
+        // Death zone logic
+        const inDeathZone = playerY >= DEATH_ZONE_Y;
+
+        if (inDeathZone) {
+            if (!isInDeathZone) {
+                isInDeathZone = true;
+                if (deathPopup === undefined) {
+                    deathPopup = WA.ui.openPopup("deathPopupTarget", "Oh no you are dead! maybe someone in this graveyard could help", [{
+                        label: "Explore",
+                        callback: (popup) => {
+                            popup.close();
+                            deathPopup = undefined;
+                        }
+                    }]);
+                }
+            }
+        } else {
+            isInDeathZone = false;
+            if (deathPopup) {
+                deathPopup.close();
+                deathPopup = undefined;
+            }
         }
     });
     
-    console.log('Exit zone monitoring active - watching for Y position between', EXIT_AREA_Y, 'and', EXIT_AREA_Y + EXIT_AREA_HEIGHT);
+    console.log('Exit zone monitoring active - watching for Y position <', EXIT_AREA_Y + EXIT_AREA_HEIGHT);
     
     
-    const currentPos = await WA.player.getPosition();
-    console.log('Current player position:', currentPos);
-    if (currentPos.y >= EXIT_AREA_Y && currentPos.y <= (EXIT_AREA_Y + EXIT_AREA_HEIGHT)) {
-        console.log('player in zone');
-        WA.nav.goToRoom(EXIT_TARGET);
+    // const currentPos = await WA.player.getPosition();
+    // console.log('Current player position:', currentPos);
+    if (currentPos.y <= (EXIT_AREA_Y + EXIT_AREA_HEIGHT)) {
+        if (!WA.player.isLogged) {
+            isInExitZone = true;
+             if (exitPopup === undefined) {
+                exitPopup = WA.ui.openPopup("popupTarget", "Please log in to exit.", [{
+                    label: "Close",
+                    callback: (popup) => {
+                        popup.close();
+                        exitPopup = undefined;
+                    }
+                }]);
+            }
+        } else {
+            console.log('player in zone');
+            WA.nav.goToRoom(EXIT_TARGET);
+        }
     }
 });

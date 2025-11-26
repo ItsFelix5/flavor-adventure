@@ -325,6 +325,17 @@ class ConnectionManager {
             //before set token of user we must load room and all information. For example the mandatory authentication could be require on current room
             this._currentRoom = await Room.createRoom(roomPathUrl);
 
+            // If the room URL has changed (due to a redirect), we need to reload the page with the new URL
+            // to ensure all assets are loaded relative to the correct path and to fix any relative path issues.
+            if (this._currentRoom.href !== roomPathUrl.href) {
+                // Check if the redirect contains a hash (like #slackId=...) and if the current URL doesn't.
+                // If so, we might want to preserve the hash or handle it.
+                // In the case of the house redirect, we added #slackId=... to the redirect URL.
+                
+                window.location.href = this._currentRoom.href;
+                return new Promise(() => {}); // Never resolve, wait for reload
+            }
+
             // Check if the map is allowed for unauthenticated users
             const isAllowedMap =
                 roomPathUrl.pathname.includes("courtyard.tmj") || roomPathUrl.pathname.includes("UI.tmj");

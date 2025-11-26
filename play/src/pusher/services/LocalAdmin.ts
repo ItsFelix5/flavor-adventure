@@ -48,6 +48,7 @@ import { MetaTagsDefaultValue } from "./MetaTagsBuilder";
 import { localCompanionService } from "./LocalCompanionSevice";
 import { ShortMapDescription, ShortMapDescriptionList } from "./ShortMapDescription";
 import { WorldChatMembersData } from "./WorldChatMembersData";
+import { postgresClient } from "./PostgresClient";
 
 /**
  * A local class mocking a real admin if no admin is configured.
@@ -272,7 +273,7 @@ class LocalAdmin implements AdminInterface {
         };
     }
 
-    fetchMapDetails(
+    async fetchMapDetails(
         playUri: string,
         authToken?: string,
         locale?: string
@@ -284,6 +285,29 @@ class LocalAdmin implements AdminInterface {
             return Promise.resolve({
                 redirectUrl: roomUrl.toString(),
             });
+        }
+
+        // Handle /slack/[SlackID]
+        let slackMatch = /^\/slack\/([a-zA-Z0-9_]+)$/i.exec(roomUrl.pathname);
+        if (!slackMatch) {
+            // Check for /_/global/.../slack/...
+            slackMatch = /^\/_\/global\/[^\/]+\/slack\/([a-zA-Z0-9_]+)$/i.exec(roomUrl.pathname);
+        }
+
+        if (slackMatch) {
+            const slackId = slackMatch[1];
+            const userMapData = await postgresClient.getUserMap(slackId);
+            if (userMapData && userMapData.isApproved) {
+                return {
+                    redirectUrl: `/_/global/${userMapData.mapUrl}`,
+                };
+            }
+            
+            // If not found or not approved, redirect to the standard house
+            // We pass the Slack ID in the hash so the client-side scripts can read it and display the user name
+            return {
+                redirectUrl: `/_/global/maps.workadventure.localhost/flavor/house.tmj?slackId=${slackId}`,
+            };
         }
 
         let mapUrl = undefined;

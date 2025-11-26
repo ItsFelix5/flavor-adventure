@@ -328,23 +328,6 @@ export class SocketManager implements ZoneEventListener {
 
             // Check if user is already online (only for logged in users)
             if (socketData.isLogged) {
-                const isOnline = await redisClient.isUserOnline(socketData.userUuid);
-                if (isOnline) {
-                    console.warn(`User ${socketData.userUuid} is already connected. Rejecting new connection.`);
-                    // User is already online. Reject connection.
-                    socketData.emitInBatch({
-                        message: {
-                            $case: "errorMessage",
-                            errorMessage: {
-                                message: "You are already connected in another tab or device.",
-                            },
-                        },
-                    });
-                    // We need to close the connection
-                    socketData.rejected = true;
-                    this.closeWebsocketConnection(client, 4000, "User already connected");
-                    return;
-                }
                 // Only set user online if they are not anonymous
                 if (!socketData.userUuid.startsWith("00000")) {
                     await redisClient.setUserOnline(socketData.userUuid);

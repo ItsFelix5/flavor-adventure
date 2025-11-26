@@ -3,6 +3,33 @@
  "infinite":false,
  "layers":[
         {
+         "id":78,
+         "name":"Variables",
+         "objects":[
+                {
+                 "height":32,
+                 "id":23,
+                 "name":"houseName",
+                 "rotation":0,
+                 "type":"variable",
+                 "visible":true,
+                 "width":32,
+                 "x":0,
+                 "y":0,
+                 "properties":[
+                        {
+                         "name":"default",
+                         "type":"string",
+                         "value":""
+                        }]
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        },
+        {
          "data":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -322,7 +349,7 @@
                      "bold":true,
                      "fontfamily":"Ubuntu Sans ExtraBold",
                      "halign":"center",
-                     "text":"Hello World",
+                     "text":"{{ houseName }}",
                      "wrap":true
                     },
                  "type":"",

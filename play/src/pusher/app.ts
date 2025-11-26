@@ -33,6 +33,8 @@ import { ChatLogController } from "./controllers/ChatLogController";
 import { PlayerInfoController } from "./controllers/PlayerInfoController";
 import { DynamicMapController } from "./controllers/DynamicMapController";
 import { SlackUserController } from "./controllers/SlackUserController";
+import { MapRegistryController } from "./controllers/MapRegistryController";
+import { postgresClient } from "./services/PostgresClient";
 
 class App {
     private readonly app: Application;
@@ -110,6 +112,7 @@ class App {
         new PlayerInfoController(this.app);
         new DynamicMapController(this.app);
         new SlackUserController(this.app);
+        new MapRegistryController(this.app);
 
         const staticOptions = {
             extensions: [
@@ -202,6 +205,9 @@ class App {
     }
 
     public async init() {
+        // Initialize Postgres Client
+        await postgresClient.init();
+
         const companionListController = new CompanionListController(this.app, jwtTokenManager);
         const wokaListController = new WokaListController(this.app, jwtTokenManager);
 

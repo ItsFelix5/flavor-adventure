@@ -3,8 +3,18 @@ import { Pool, PoolClient } from "pg";
 class PostgresClient {
     private pool: Pool | null = null;
     private enabled = false;
+    private initializationPromise: Promise<void> | null = null;
 
     async init(): Promise<void> {
+        if (this.initializationPromise) {
+            return this.initializationPromise;
+        }
+
+        this.initializationPromise = this.doInit();
+        return this.initializationPromise;
+    }
+
+    private async doInit(): Promise<void> {
         const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
         if (connectionString) {
@@ -23,6 +33,7 @@ class PostgresClient {
                 client.release();
 
                 this.enabled = true;
+                await this.initUserMapsTable();
                 return;
             } catch (error) {
                 console.error("Failed to initialize PostgreSQL connection:", error);
@@ -62,10 +73,40 @@ class PostgresClient {
             client.release();
 
             this.enabled = true;
+            await this.initUserMapsTable();
         } catch (error) {
             console.error("Failed to initialize PostgreSQL connection:", error);
             this.pool = null;
             this.enabled = false;
+        }
+    }
+
+    private async initUserMapsTable(): Promise<void> {
+        if (!this.isEnabled()) return;
+        try {
+            // Create table if not exists
+            await this.query(`
+                CREATE TABLE IF NOT EXISTS user_maps (
+                    slack_id TEXT PRIMARY KEY,
+                    map_url TEXT NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            
+            // Add is_approved column if it doesn't exist
+            await this.query(`
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_maps' AND column_name='is_approved') THEN
+                        ALTER TABLE user_maps ADD COLUMN is_approved BOOLEAN DEFAULT FALSE;
+                    END IF;
+                END
+                $$;
+            `);
+
+            console.info("PostgreSQL user_maps table initialized");
+        } catch (error) {
+            console.error("Failed to initialize user_maps table:", error);
         }
     }
 
@@ -139,6 +180,46 @@ class PostgresClient {
             return { givenName: result.rows[0].given_name };
         } catch (error) {
             console.error("[PostgresClient] Failed to get user:", error);
+            return null;
+        }
+    }
+
+    async upsertUserMap(slackId: string, mapUrl: string): Promise<boolean> {
+        if (!this.isEnabled()) return false;
+        try {
+            await this.query(
+                `INSERT INTO user_maps (slack_id, map_url, is_approved, updated_at)
+                 VALUES ($1, $2, FALSE, CURRENT_TIMESTAMP)
+                 ON CONFLICT (slack_id) 
+                 DO UPDATE SET 
+                     map_url = EXCLUDED.map_url,
+                     is_approved = FALSE,
+                     updated_at = CURRENT_TIMESTAMP`,
+                [slackId, mapUrl]
+            );
+            return true;
+        } catch (error) {
+            console.error("[PostgresClient] Failed to upsert user map:", error);
+            return false;
+        }
+    }
+
+    async getUserMap(slackId: string): Promise<{ mapUrl: string; isApproved: boolean } | null> {
+        if (!this.isEnabled()) return null;
+        try {
+            const result = (await this.query(
+                `SELECT map_url, is_approved FROM user_maps WHERE slack_id = $1`,
+                [slackId]
+            )) as {
+                rows: Array<{ map_url: string; is_approved: boolean }>;
+            };
+            if (result.rows.length === 0) return null;
+            return {
+                mapUrl: result.rows[0].map_url,
+                isApproved: result.rows[0].is_approved,
+            };
+        } catch (error) {
+            console.error("[PostgresClient] Failed to get user map:", error);
             return null;
         }
     }
