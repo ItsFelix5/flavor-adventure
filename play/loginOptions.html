@@ -92,8 +92,22 @@
     </div>
     <script>
         function returnToUI() {
-            // Go to the root which will redirect to the start room (UI.tmj)
-            window.location.href = '/';
+            // Get the playUri from URL params to redirect back to the correct map
+            const urlParams = new URLSearchParams(window.location.search);
+            const playUri = urlParams.get('playUri');
+            if (playUri) {
+                window.location.href = playUri;
+            } else {
+                // Fallback: construct UI.tmj URL based on current host
+                const host = window.location.host;
+                let mapsHost = host;
+                if (host.includes('play.workadventure.localhost')) {
+                    mapsHost = 'maps.workadventure.localhost';
+                } else if (host.includes('play.')) {
+                    mapsHost = host.replace(/^play\./, '');
+                }
+                window.location.href = '/_/global/' + mapsHost + '/flavor/UI.tmj';
+            }
         }
     </script>
 </body>
