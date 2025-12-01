@@ -516,6 +516,15 @@ class AdminApi implements AdminInterface {
          *
          */
         //todo: this call can fail if the corresponding world is not activated or if the token is invalid. Handle that case.
+        // Validate organizationMemberToken before using in path
+        // Accept a JWT ([\w-]+\.[\w-]+\.[\w-]+) or a UUID
+        const isValidToken =
+            /^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/.test(organizationMemberToken) ||
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(organizationMemberToken);
+        if (!isValidToken) {
+            throw new Error('Invalid organizationMemberToken format');
+        }
+
         const res = await axios.get(ADMIN_API_URL + "/api/login-url/" + organizationMemberToken, {
             params: { playUri },
             headers: { Authorization: `${ADMIN_API_TOKEN}`, "Accept-Language": locale ?? "en" },
