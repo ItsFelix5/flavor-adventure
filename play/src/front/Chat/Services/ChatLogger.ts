@@ -35,11 +35,10 @@ export class ChatLogger {
                 body: JSON.stringify(payload),
             });
 
+            const text = await response.text();
+
             if (!response.ok) {
-                const text = await response.text();
-                console.error("[ChatLogger] Failed to log chat message:", response.status, text);
-            } else {
-                console.debug("[ChatLogger] Chat message logged successfully");
+                console.warn(`[ChatLogger] Failed to log chat message: ${response.status} - ${text}`);
             }
         } catch (e) {
             console.warn("[ChatLogger] Failed to log chat message:", e);

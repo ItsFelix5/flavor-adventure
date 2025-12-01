@@ -91,6 +91,7 @@ export class HackClubAuthClient {
         });
 
         const data = response.data;
+        console.info("[HackClubAuthClient] Raw response:", JSON.stringify(data));
 
         // Extract info from the "identity" object if present (as per new response format)
         const identity = data.identity || data;
@@ -98,12 +99,14 @@ export class HackClubAuthClient {
         // Map HCA user info to our structure
         // HCA returns: id, name, email, slack_id, etc. (possibly nested in identity)
         // We want to use slack_id as the primary identifier if available to match Slack login
-        return {
+        const result = {
             sub: identity.slack_id || identity.id,
-            name: identity.name, // Note: User wants to fetch name from Slack instead, we handle that in AuthenticateController
+            name: identity.name || identity.display_name || identity.username || identity.slack_id,
             email: identity.primary_email || identity.email,
             slack_id: identity.slack_id,
         };
+        console.info("[HackClubAuthClient] Mapped user info:", JSON.stringify(result));
+        return result;
     }
 }
 

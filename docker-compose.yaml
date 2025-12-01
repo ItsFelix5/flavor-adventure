@@ -106,6 +106,8 @@ services:
       ENABLE_CHAT_DISCONNECTED_LIST: "${ENABLE_CHAT_DISCONNECTED_LIST:-false}"
       # Chat logging
       CHAT_LOG_SECRET: "${CHAT_LOG_SECRET:-your-secret-token-here}"
+      # Slack bot token for fetching usernames from Slack API
+      SLACK_BOT_TOKEN: "${SLACK_BOT_TOKEN:-}"
       # PostgreSQL database for chat logs (use DATABASE_URL or individual vars)
       DATABASE_URL: "${DATABASE_URL:-}"
       POSTGRES_HOST: "${POSTGRES_HOST:-}"

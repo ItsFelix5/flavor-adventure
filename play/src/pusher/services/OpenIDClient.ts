@@ -77,20 +77,21 @@ class OpenIDClient {
         providerScopes: string[] | undefined
     ): Promise<string> {
         const isSlack = OPID_CLIENT_ISSUER.includes("slack.com");
-        
+
         if (isSlack) {
             const state = v4();
             res.cookie("oidc_state", state, {
                 httpOnly: true,
                 secure: req.secure,
             });
-            
+
             res.cookie("code_verifier", this.encrypt("slack_oauth"), {
                 httpOnly: true,
                 secure: req.secure,
             });
 
-            const userScopes = providerScopes?.join(",") || "identity.basic,identity.email,identity.avatar,identity.team";
+            const userScopes =
+                providerScopes?.join(",") || "identity.basic,identity.email,identity.avatar,identity.team";
             const authUrl = new URL("https://slack.com/oauth/v2/authorize");
             authUrl.searchParams.set("client_id", OPID_CLIENT_ID);
             authUrl.searchParams.set("user_scope", userScopes);
@@ -171,22 +172,22 @@ class OpenIDClient {
             res.clearCookie("oidc_state");
 
             const isSlack = OPID_CLIENT_ISSUER.includes("slack.com");
-            
+
             let accessToken: string;
-            let userInfoResponse: any;
+            let userInfoResponse: Record<string, unknown>;
 
             if (isSlack) {
                 console.info("Detected Slack OAuth - using Slack-specific token exchange");
                 if (!params.code) {
                     throw new Error("No authorization code received from Slack");
                 }
-                accessToken = await this.exchangeSlackCode(params.code as string);
+                accessToken = await this.exchangeSlackCode(params.code);
                 console.info("Successfully exchanged Slack code for access token");
                 userInfoResponse = await this.fetchSlackUserInfo(accessToken);
-                console.info("Successfully fetched Slack user info:", { 
+                console.info("Successfully fetched Slack user info:", {
                     userId: userInfoResponse.sub,
                     email: userInfoResponse.email,
-                    name: userInfoResponse.name 
+                    name: userInfoResponse.name,
                 });
             } else {
                 const checks: OpenIDCallbackChecks = {
@@ -202,7 +203,9 @@ class OpenIDClient {
                     tokenSet = await client.callback(OPID_CLIENT_REDIRECT_URL, params, checks);
                 } catch (error) {
                     if (error instanceof Error && error.message.includes("id_token")) {
-                        console.info("ID token not found in response - attempting OAuth 2.0 flow without ID token validation");
+                        console.info(
+                            "ID token not found in response - attempting OAuth 2.0 flow without ID token validation"
+                        );
                         tokenSet = await client.oauthCallback(OPID_CLIENT_REDIRECT_URL, params, checks);
                     } else {
                         throw error;
@@ -232,9 +235,13 @@ class OpenIDClient {
                 email: userInfoResponse.email ?? "",
                 sub: userInfoResponse.sub ?? userInfoResponse.user_id ?? "",
                 access_token: accessToken,
-                username: userInfoResponse[OPID_USERNAME_CLAIM] as string ?? userInfoResponse.name ?? userInfoResponse.real_name ?? "",
-                locale: userInfoResponse[OPID_LOCALE_CLAIM] as string ?? userInfoResponse.locale ?? "",
-                tags: userInfoResponse[OPID_TAGS_CLAIM] as string[] ?? [],
+                username:
+                    userInfoResponse.name ??
+                    (userInfoResponse[OPID_USERNAME_CLAIM] as string) ??
+                    userInfoResponse.real_name ??
+                    "",
+                locale: (userInfoResponse[OPID_LOCALE_CLAIM] as string) ?? userInfoResponse.locale ?? "",
+                tags: (userInfoResponse[OPID_TAGS_CLAIM] as string[]) ?? [],
                 matrix_url: userInfoResponse.matrix_url as string | undefined,
                 matrix_identity_provider: userInfoResponse.matrix_identity_provider as string | undefined,
             };
@@ -269,7 +276,7 @@ class OpenIDClient {
         }
     }
 
-    private async fetchSlackUserInfo(accessToken: string): Promise<any> {
+    private async fetchSlackUserInfo(accessToken: string): Promise<Record<string, unknown>> {
         try {
             const response = await axios.get("https://slack.com/api/users.identity", {
                 headers: {
@@ -282,7 +289,7 @@ class OpenIDClient {
             }
 
             const { user, team } = response.data;
-            
+
             return {
                 sub: user.id,
                 user_id: user.id,

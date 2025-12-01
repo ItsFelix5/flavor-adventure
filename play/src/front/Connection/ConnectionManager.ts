@@ -331,6 +331,7 @@ class ConnectionManager {
                 // Check if the redirect contains a hash (like #slackId=...) and if the current URL doesn't.
                 // If so, we might want to preserve the hash or handle it.
                 // In the case of the house redirect, we added #slackId=... to the redirect URL.
+
                 // eslint-disable-next-line require-atomic-updates
                 window.location.href = this._currentRoom.href;
                 return new Promise(() => {}); // Never resolve, wait for reload
@@ -748,16 +749,24 @@ class ConnectionManager {
         }
 
         const opidWokaNamePolicy = this.currentRoom?.opidWokaNamePolicy;
+        console.info("[ConnectionManager] username from OIDC:", username, "policy:", opidWokaNamePolicy);
         if (username != undefined && opidWokaNamePolicy != undefined) {
             if (hasCapability("api/save-name")) {
+                console.info("[ConnectionManager] Setting player name (api/save-name):", username);
                 gameManager.setPlayerName(username);
             } else {
                 if (opidWokaNamePolicy === "force_opid") {
+                    console.info("[ConnectionManager] Setting player name (force_opid):", username);
                     gameManager.setPlayerName(username);
                 } else if (opidWokaNamePolicy === "allow_override_opid" && localUserStore.getName() == undefined) {
+                    console.info("[ConnectionManager] Setting player name (allow_override):", username);
                     gameManager.setPlayerName(username);
                 }
             }
+        } else if (username) {
+            // Always set username if we have one, regardless of policy
+            console.info("[ConnectionManager] Setting player name (fallback):", username);
+            gameManager.setPlayerName(username);
         }
 
         if (locale) {

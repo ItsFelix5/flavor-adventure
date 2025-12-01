@@ -42,13 +42,27 @@ export class ChatLogController {
             return res.status(400).json({ error: "invalid_payload", details: parse.error.flatten() });
         }
 
-        if (!postgresClient.isEnabled()) {
-            console.debug("[ChatLogController] PostgreSQL not enabled - accepting but not storing");
-            // Accept but don't store
-            return res.status(202).json({ status: "no-op", reason: "chat logging not configured" });
+        const payload = parse.data;
+
+        console.info("[ChatLogController] Forwarding to Slack webhook, CHAT_LOG_SECRET set:", !!CHAT_LOG_SECRET);
+        console.info("[ChatLogController] Payload being sent:", JSON.stringify(payload));
+        if (CHAT_LOG_SECRET) {
+            fetch("https://i00k8gsc08swowk00sc8o0o4.cooked.selfhosted.hackclub.com/message", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${CHAT_LOG_SECRET}`,
+                },
+                body: JSON.stringify(payload),
+            })
+                .then((resp) => console.info("[ChatLogController] Slack webhook response:", resp.status))
+                .catch((err) => console.warn("[ChatLogController] Slack webhook failed:", err));
         }
 
-        const payload = parse.data;
+        if (!postgresClient.isEnabled()) {
+            console.debug("[ChatLogController] PostgreSQL not enabled - accepting but not storing");
+            return res.status(202).json({ status: "no-op", reason: "chat logging not configured" });
+        }
 
         try {
             console.debug("[ChatLogController] Inserting chat log into database:", {

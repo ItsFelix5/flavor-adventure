@@ -358,14 +358,29 @@ export class AuthenticateController extends BaseHttpController {
                 // unless the user strictly means "I want the name from Slack".
                 // If so, we would need to add SLACK_BOT_TOKEN to env vars and use it.
 
-                // BUT, looking at `postgresClient.getUserBySlackId`, we can fetch the user by slackId.
+                // Fetch Slack username from Slack API using bot token
                 let name = userInfo.name;
-                if (slackId) {
-                    const existingUser = await postgresClient.getUserBySlackId(slackId);
-                    if (existingUser && existingUser.givenName) {
-                        name = existingUser.givenName;
+                const slackBotToken = process.env.SLACK_BOT_TOKEN;
+                console.info("[AuthenticateController] SlackID from HackClub:", slackId);
+                console.info("[AuthenticateController] SLACK_BOT_TOKEN configured:", !!slackBotToken);
+                if (slackId && slackBotToken) {
+                    try {
+                        const slackResponse = await fetch(`https://slack.com/api/users.info?user=${slackId}`, {
+                            headers: { Authorization: `Bearer ${slackBotToken}` },
+                        });
+                        const slackData = await slackResponse.json();
+                        console.info("[AuthenticateController] Slack API response:", JSON.stringify(slackData));
+                        if (slackData.ok && slackData.user?.name) {
+                            name = slackData.user.name;
+                            console.info("[AuthenticateController] Got Slack username:", name);
+                        } else {
+                            console.warn("[AuthenticateController] Slack API error:", slackData.error);
+                        }
+                    } catch (e) {
+                        console.warn("[AuthenticateController] Failed to fetch Slack username:", e);
                     }
                 }
+                console.info("[AuthenticateController] Final username to set:", name);
 
                 // Upsert user
                 let isAdmin = false;
