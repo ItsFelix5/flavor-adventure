@@ -2,7 +2,7 @@ import { z } from "zod";
 import { extendApi } from "@anatine/zod-openapi";
 import { isMetaTagFavicon } from "./MetaTagFavicon";
 import { isMetaTagManifestIcon } from "./MetaTagManifestIcon";
-import { OpidWokaNamePoicy } from "./OpidWokaNamePolicy";
+import { OpidWokaNamePolicy } from "./OpidWokaNamePolicy";
 
 const isBbbData = z.object({
     url: extendApi(z.string(), {
