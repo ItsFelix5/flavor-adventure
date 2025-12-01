@@ -264,6 +264,17 @@ class LocalUserStore {
         return localStorage.getItem(authToken);
     }
 
+    getSlackId(): string | null {
+        const token = this.getAuthToken();
+        if (!token) return null;
+        try {
+            const payload = LocalUserStore.parseJwt(token);
+            return payload.slackId || null;
+        } catch {
+            return null;
+        }
+    }
+
     isLogged(): boolean {
         //return this.jwt?.accessToken !== undefined && this.jwt?.accessToken !== null;
         const accessToken = this.jwt?.accessToken;

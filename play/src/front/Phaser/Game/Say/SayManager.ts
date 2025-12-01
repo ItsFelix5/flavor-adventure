@@ -42,22 +42,22 @@ export class SayManager {
 
         // Log the say message if it's not empty
         if (text.trim().length > 0) {
-        const gameScene = gameManager.getCurrentGameScene();
-        const roomUrl = gameScene.roomUrl;
-        const localUser = localUserStore.getLocalUser();
-        const playerName = localUserStore.getName() || player.name;
+            const gameScene = gameManager.getCurrentGameScene();
+            const roomUrl = gameScene.roomUrl;
+            const localUser = localUserStore.getLocalUser();
+            const playerName = player.name || localUserStore.getName() || localUserStore.getSlackId() || "Unknown";
 
-        ChatLogger.logMessage({
-            type: type === SayMessageType.SpeechBubble ? "say" : "think",
-            message: text,
-            author: localUser?.uuid, // Slack user ID from OpenID sub claim
-            playerName: playerName,
-            playerUuid: localUser?.uuid, // Use consistent UUID source
-            roomId: roomUrl,
-            raw: {
-                duration: duration,
-            },
-        }).catch((e) => console.debug("Chat log failed:", e));
+            ChatLogger.logMessage({
+                type: type === SayMessageType.SpeechBubble ? "say" : "think",
+                message: text,
+                author: localUser?.uuid,
+                playerName: playerName,
+                playerUuid: localUser?.uuid,
+                roomId: roomUrl,
+                raw: {
+                    duration: duration,
+                },
+            }).catch((e) => console.debug("Chat log failed:", e));
         }
 
         if (type === SayMessageType.ThinkingCloud) {
