@@ -331,7 +331,7 @@ class ConnectionManager {
                 // Check if the redirect contains a hash (like #slackId=...) and if the current URL doesn't.
                 // If so, we might want to preserve the hash or handle it.
                 // In the case of the house redirect, we added #slackId=... to the redirect URL.
-                
+                // eslint-disable-next-line require-atomic-updates
                 window.location.href = this._currentRoom.href;
                 return new Promise(() => {}); // Never resolve, wait for reload
             }
@@ -339,7 +339,7 @@ class ConnectionManager {
             // Check if the map is allowed for unauthenticated users
             const isAllowedMap =
                 roomPathUrl.pathname.includes("courtyard.tmj") || roomPathUrl.pathname.includes("UI.tmj");
-            if (!localUserStore.isLogged() && !isAllowedMap && !this._currentRoom.authenticationMandatory) {
+            if (!localUserStore.isLogged() && !isAllowedMap && this._currentRoom.authenticationMandatory) {
                 const redirect = this.loadOpenIDScreen(false);
                 if (redirect === null) {
                     throw new Error("Access denied for anonymous user and unable to redirect to login.");
