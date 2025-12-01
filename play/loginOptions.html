@@ -87,8 +87,14 @@
     <div class="container">
         <h1>Sign In:</h1>
         <p>Signing in allows you to get upgrades like pets, talk to people, get your own house and more!</p>
-        <a href="/auth/slack?{{{queryString}}}" class="btn btn-slack">Sign in with Slack</a>
         <a href="/auth/hackclub?{{{queryString}}}" class="btn btn-hackclub">Sign in with Hack Club</a>
+        <a href="#" class="btn btn-slack" onclick="returnToUI(); return false;">Return</a>
     </div>
+    <script>
+        function returnToUI() {
+            // Go to the root which will redirect to the start room (UI.tmj)
+            window.location.href = '/';
+        }
+    </script>
 </body>
 </html>

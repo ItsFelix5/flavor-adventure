@@ -291,7 +291,7 @@ class LocalAdmin implements AdminInterface {
         let slackMatch = /^\/slack\/([a-zA-Z0-9_]+)$/i.exec(roomUrl.pathname);
         if (!slackMatch) {
             // Check for /_/global/.../slack/...
-            slackMatch = /^\/_\/global\/[^\/]+\/slack\/([a-zA-Z0-9_]+)$/i.exec(roomUrl.pathname);
+            slackMatch = /^\/_\/global\/[^/]+\/slack\/([a-zA-Z0-9_]+)$/i.exec(roomUrl.pathname);
         }
 
         if (slackMatch) {
@@ -302,7 +302,7 @@ class LocalAdmin implements AdminInterface {
                     redirectUrl: `/_/global/${userMapData.mapUrl}`,
                 };
             }
-            
+
             // If not found or not approved, redirect to the standard house
             // We pass the Slack ID in the hash so the client-side scripts can read it and display the user name
             return {
@@ -336,7 +336,11 @@ class LocalAdmin implements AdminInterface {
                     subtitle: "",
                 });
             }
-            mapUrl = roomUrl.protocol + "//" + match[1];
+            // Use HTTPS for external hosts (github.io, githubusercontent.com), HTTP for localhost
+            const mapHost = match[1].split("/")[0];
+            const isLocalhost = mapHost.includes("localhost") || mapHost.includes("127.0.0.1");
+            const protocol = isLocalhost ? "http:" : "https:";
+            mapUrl = protocol + "//" + match[1];
         }
 
         const opidWokaNamePolicyCheck = OpidWokaNamePolicy.safeParse(OPID_WOKA_NAME_POLICY);

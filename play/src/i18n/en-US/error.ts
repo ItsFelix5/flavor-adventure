@@ -4,15 +4,15 @@ const error: BaseTranslation = {
     accessLink: {
         title: "Access link incorrect",
         subTitle: "Could not find map. Please check your access link.",
-        details: "If you want more information, you may contact administrator or contact us at: hello@workadventu.re",
+        details: "If you want more information, you may contact administrator or contact us at: euan@hackclub.com",
     },
     connectionRejected: {
         title: "Connection rejected",
         subTitle: "You cannot join the World. Try again later {error}.",
-        details: "If you want more information, you may contact administrator or contact us at: hello@workadventu.re",
+        details: "If you want more information, you may contact administrator or contact us at: euan@hackclub.com",
     },
     connectionRetry: {
-        unableConnect: "Unable to connect to WorkAdventure. Are you connected to internet?",
+        unableConnect: "Unable to connect to Flavortown. Are you connected to internet?",
     },
     errorDialog: {
         title: "Error 😱",

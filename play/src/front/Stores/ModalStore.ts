@@ -10,4 +10,6 @@ export const showModalGlobalComminucationVisibilityStore = writable(false);
 
 export const showNavigationModalStore = writable(false);
 
+export const showRegisterMapModalStore = writable(false);
+
 export const roomListVisibilityStore = writable<boolean>(false);

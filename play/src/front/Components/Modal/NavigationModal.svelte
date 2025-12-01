@@ -1,7 +1,6 @@
 <script lang="ts">
     import { fly } from "svelte/transition";
-    import { showNavigationModalStore } from "../../Stores/ModalStore";
-    import { gameManager } from "../../Phaser/Game/GameManager";
+    import { showNavigationModalStore, showRegisterMapModalStore } from "../../Stores/ModalStore";
     import ButtonClose from "../Input/ButtonClose.svelte";
     import { localUserStore } from "../../Connection/LocalUserStore";
 
@@ -33,20 +32,31 @@
         return undefined;
     }
 
-    function goToCourtyard() {
-        const roomId = gameManager.getCurrentGameScene().room.id;
+    function getFlavorHosts(): { mapsHost: string; playHost: string } {
+        const host = window.location.host;
 
-        // Extract host from current room URL
-        const match = roomId.match(/_\/global\/([^/]+)\//);
-        let mapsHost = match && match[1] ? match[1] : window.location.host;
-
-        // In dev: use maps.workadventure.localhost, in prod: use same host
-        if (mapsHost.includes("workadventure.localhost")) {
-            mapsHost = mapsHost.replace(/^play\./, "maps.");
+        if (host.includes("workadventure.localhost")) {
+            return {
+                mapsHost: "maps.workadventure.localhost",
+                playHost: "play.workadventure.localhost",
+            };
         }
 
-        console.log("[Navigation] Going to courtyard");
+        if (host.includes("hackclub.com") || host.includes("github.io")) {
+            return {
+                mapsHost: "flavor-adventure.hackclub.com",
+                playHost: "flavor-adventure.hackclub.com",
+            };
+        }
 
+        return {
+            mapsHost: host,
+            playHost: host,
+        };
+    }
+
+    function goToCourtyard() {
+        const { mapsHost } = getFlavorHosts();
         window.location.href = `/_/global/${mapsHost}/flavor/courtyard.tmj`;
         close();
     }
@@ -59,38 +69,17 @@
             return;
         }
 
-        const roomId = gameManager.getCurrentGameScene().room.id;
-        // Extract host from current room URL
-        const match = roomId.match(/_\/global\/([^/]+)\//);
-        let playHost = match && match[1] ? match[1] : window.location.host;
-
-        // In dev: replace maps. with play., in prod: use same host
-        if (playHost.includes("workadventure.localhost")) {
-            playHost = playHost.replace(/^maps\./, "play.");
-        }
-
+        const { playHost } = getFlavorHosts();
         console.log("[Navigation] Going home");
-
         window.location.href = `/_/global/${playHost}/slack/${slackId}`;
         close();
     }
 
     function startMeeting() {
-        // Generate random meeting ID
         const meetingId = Math.random().toString(36).substring(2, 12);
-
-        const roomId = gameManager.getCurrentGameScene().room.id;
-        // Extract host from current room URL
-        const match = roomId.match(/_\/global\/([^/]+)\//);
-        let playHost = match && match[1] ? match[1] : window.location.host;
-
-        // In dev: replace maps. with play., in prod: use same host
-        if (playHost.includes("workadventure.localhost")) {
-            playHost = playHost.replace(/^maps\./, "play.");
-        }
+        const { playHost } = getFlavorHosts();
 
         console.log("[Navigation] Starting meeting with ID:", meetingId);
-
         alert(`Meeting ID: ${meetingId}`);
 
         window.location.href = `/_/global/${playHost}/meet/${meetingId}`;
@@ -106,20 +95,16 @@
             return;
         }
 
-        const roomId = gameManager.getCurrentGameScene().room.id;
-        // Extract host from current room URL
-        const match = roomId.match(/_\/global\/([^/]+)\//);
-        let playHost = match && match[1] ? match[1] : window.location.host;
-
-        // In dev: replace maps. with play., in prod: use same host
-        if (playHost.includes("workadventure.localhost")) {
-            playHost = playHost.replace(/^maps\./, "play.");
-        }
-
+        const { playHost } = getFlavorHosts();
         console.log("[Navigation] Joining meeting");
 
         window.location.href = `/_/global/${playHost}/meet/${meetingIdInput.trim()}`;
         close();
+    }
+
+    function uploadCustomHouse() {
+        showNavigationModalStore.set(false);
+        showRegisterMapModalStore.set(true);
     }
 </script>
 
@@ -146,27 +131,39 @@
                     >
                         Go to Courtyard
                     </button>
+                    {#if localUserStore.isLogged()}
+                        <button
+                            class="rounded-lg bg-light-purple px-6 py-3 text-white hover:bg-light-purple/80 transition-colors"
+                            on:click={goHome}
+                        >
+                            Go Home
+                        </button>
 
-                    <button
-                        class="rounded-lg bg-light-purple px-6 py-3 text-white hover:bg-light-purple/80 transition-colors"
-                        on:click={goHome}
-                    >
-                        Go Home
-                    </button>
+                        <button
+                            class="rounded-lg bg-light-purple px-6 py-3 text-white hover:bg-light-purple/80 transition-colors"
+                            on:click={startMeeting}
+                        >
+                            Start a Meeting
+                        </button>
 
-                    <button
-                        class="rounded-lg bg-light-purple px-6 py-3 text-white hover:bg-light-purple/80 transition-colors"
-                        on:click={startMeeting}
-                    >
-                        Start a Meeting
-                    </button>
+                        <button
+                            class="rounded-lg bg-light-purple px-6 py-3 text-white hover:bg-light-purple/80 transition-colors"
+                            on:click={showJoinMeeting}
+                        >
+                            Join a Meeting
+                        </button>
 
-                    <button
-                        class="rounded-lg bg-light-purple px-6 py-3 text-white hover:bg-light-purple/80 transition-colors"
-                        on:click={showJoinMeeting}
-                    >
-                        Join a Meeting
-                    </button>
+                        <button
+                            class="rounded-lg bg-green-600 px-6 py-3 text-white hover:bg-green-500 transition-colors"
+                            on:click={uploadCustomHouse}
+                        >
+                            Upload Custom House
+                        </button>
+                    {:else}
+                        <p class="text-center text-gray-300 py-4">
+                            Logged in users can navigate between their homes, meetings and shared spaces.
+                        </p>
+                    {/if}
                 </div>
             {:else}
                 <div class="flex flex-col gap-3">
