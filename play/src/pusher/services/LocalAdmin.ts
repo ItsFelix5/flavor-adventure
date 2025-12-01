@@ -305,8 +305,12 @@ class LocalAdmin implements AdminInterface {
 
             // If not found or not approved, redirect to the standard house
             // We pass the Slack ID in the hash so the client-side scripts can read it and display the user name
+            // Derive maps host from the play URL host
+            const mapsHost = roomUrl.host.includes("workadventure.localhost")
+                ? roomUrl.host.replace(/^play\./, "maps.")
+                : roomUrl.host;
             return {
-                redirectUrl: `/_/global/maps.workadventure.localhost/flavor/house.tmj?slackId=${slackId}`,
+                redirectUrl: `/_/global/${mapsHost}/flavor/house.tmj?slackId=${slackId}`,
             };
         }
 
