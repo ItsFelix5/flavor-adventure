@@ -4,9 +4,9 @@ import type { Request, Response } from "express";
 import { HACK_CLUB_CLIENT_ID, HACK_CLUB_CLIENT_SECRET, OPID_CLIENT_REDIRECT_URL } from "../enums/EnvironmentVariable";
 
 export class HackClubAuthClient {
-    private readonly authUrl = "https://hca.dinosaurbbq.org/oauth/authorize";
-    private readonly tokenUrl = "https://hca.dinosaurbbq.org/oauth/token";
-    private readonly userInfoUrl = "https://hca.dinosaurbbq.org/api/v1/me";
+    private readonly authUrl = "https://account.hackclub.com/oauth/authorize";
+    private readonly tokenUrl = "https://account.hackclub.com/oauth/token";
+    private readonly userInfoUrl = "https://account.hackclub.com/api/v1/me";
 
     public authorizationUrl(
         res: Response,
@@ -28,13 +28,6 @@ export class HackClubAuthClient {
             secure: req.secure,
         });
 
-        // Hack Club OAuth doesn't seem to use code_verifier based on the guide,
-        // but we'll set it if needed or just ignore it.
-
-        // Use HCA specific redirect URL (which we will create endpoint for)
-        // But wait, we can probably reuse the existing callback structure if we are careful.
-        // However, since we need to differentiate between providers callback,
-        // let's assume we'll use a specific one: /auth/hackclub/callback
         const redirectUri = this.getRedirectUrl();
 
         const url = new URL(this.authUrl);
@@ -44,15 +37,11 @@ export class HackClubAuthClient {
         url.searchParams.set("scope", "email name slack_id");
         url.searchParams.set("state", state);
 
-        // Pass playUri via state or cookie?
-        // AuthenticateController sets playUri in cookie before redirecting, so we rely on that.
-
         return url.toString();
     }
 
     private getRedirectUrl(): string {
         // Construct callback URL based on the base PUSHER_URL
-        // We can reuse OPID_CLIENT_REDIRECT_URL base but change path
         const baseUrl = new URL(OPID_CLIENT_REDIRECT_URL).origin;
         return `${baseUrl}/auth/hackclub/callback`;
     }
@@ -93,12 +82,8 @@ export class HackClubAuthClient {
         const data = response.data;
         console.info("[HackClubAuthClient] Raw response:", JSON.stringify(data));
 
-        // Extract info from the "identity" object if present (as per new response format)
         const identity = data.identity || data;
 
-        // Map HCA user info to our structure
-        // HCA returns: id, name, email, slack_id, etc. (possibly nested in identity)
-        // We want to use slack_id as the primary identifier if available to match Slack login
         const result = {
             sub: identity.slack_id || identity.id,
             name: identity.name || identity.display_name || identity.username || identity.slack_id,
