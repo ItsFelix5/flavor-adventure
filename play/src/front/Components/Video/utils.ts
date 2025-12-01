@@ -116,12 +116,13 @@ export function getIceServersConfig(user: TurnCredentialsAnswer): RTCIceServer[]
     const config: RTCIceServer[] = [];
     const firefoxBrowser = isFirefox();
 
-    // If we have Metered ICE servers, use those
+    // Add Metered ICE servers if available (fetched async on module load)
     if (asyncIceServers.length > 0) {
-        debug("Using Metered ICE servers");
-        return asyncIceServers;
+        debug("Adding Metered ICE servers:", asyncIceServers.length);
+        config.push(...asyncIceServers);
     }
 
+    // Also add static STUN/TURN from env vars (ensures TURN works even if Metered fetch hasn't completed)
     if (STUN_SERVER) {
         config.push({
             urls: STUN_SERVER.split(","),
@@ -143,6 +144,8 @@ export function getIceServersConfig(user: TurnCredentialsAnswer): RTCIceServer[]
 
         config.push(turnConfig);
     }
+
+    debug("Final ICE servers config:", config.length, "servers");
 
     // Add Google's public STUN servers as fallback for Firefox
     // if (firefoxBrowser && config.length === 0) {
