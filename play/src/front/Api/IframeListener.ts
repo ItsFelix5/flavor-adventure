@@ -281,6 +281,22 @@ class IframeListener {
 
                 const payload = message.data;
 
+                // Handle pre-login position save from map scripts (before iframe validation)
+                if (
+                    payload &&
+                    payload.type === "savePreLoginPosition" &&
+                    typeof payload.x === "number" &&
+                    typeof payload.y === "number"
+                ) {
+                    try {
+                        localStorage.setItem("preLoginPosition", JSON.stringify({ x: payload.x, y: payload.y }));
+                        console.log(`[IframeListener] Saved pre-login position: (${payload.x}, ${payload.y})`);
+                    } catch (e) {
+                        console.error("[IframeListener] Failed to save position:", e);
+                    }
+                    return;
+                }
+
                 const lookingLikeEvent = isLookingLikeIframeEventWrapper.safeParse(payload);
 
                 if (foundSrc === undefined || iframe === undefined) {

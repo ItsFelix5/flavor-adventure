@@ -50,6 +50,7 @@ const cameraContainerHeightKey = "cameraContainerHeight";
 const chatSideBarWidthKey = "chatSideBarWidth";
 const mapEditorSideBarWidthKey = "mapEditorSideBarWidthKey";
 const bubbleSound = "bubbleSound";
+const preLoginPositionKey = "preLoginPosition";
 
 const INITIAL_MAP_EDITOR_SIDEBAR_WIDTH = 448;
 
@@ -734,6 +735,30 @@ class LocalUserStore {
             return "wobble";
         }
         return "ding";
+    }
+
+    setPreLoginPosition(x: number, y: number): void {
+        localStorage.setItem(preLoginPositionKey, JSON.stringify({ x, y }));
+    }
+
+    getPreLoginPosition(): { x: number; y: number } | null {
+        const value = localStorage.getItem(preLoginPositionKey);
+        if (!value) {
+            return null;
+        }
+        try {
+            const pos = JSON.parse(value);
+            if (typeof pos.x === "number" && typeof pos.y === "number") {
+                return pos;
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    }
+
+    clearPreLoginPosition(): void {
+        localStorage.removeItem(preLoginPositionKey);
     }
 }
 

@@ -134,6 +134,31 @@ class ConnectionManager {
      * @param providerScopes - The scopes to request from the OpenID provider.
      */
     public loadOpenIDScreen(manuallyTriggered: boolean, providerId?: string, providerScopes?: string[]): URL | null {
+        // Save current player position before redirecting to login
+        console.log(`[ConnectionManager] loadOpenIDScreen called, manuallyTriggered=${manuallyTriggered}`);
+        try {
+            const gameScene = gameManager.getCurrentGameScene();
+            console.log(
+                `[ConnectionManager] Got gameScene:`,
+                !!gameScene,
+                `CurrentPlayer:`,
+                !!gameScene?.CurrentPlayer
+            );
+            if (gameScene?.CurrentPlayer) {
+                const x = gameScene.CurrentPlayer.x;
+                const y = gameScene.CurrentPlayer.y;
+                localUserStore.setPreLoginPosition(x, y);
+                console.log(`[ConnectionManager] Saved pre-login position: (${x}, ${y})`);
+                // Verify it was saved
+                const saved = localUserStore.getPreLoginPosition();
+                console.log(`[ConnectionManager] Verified saved position:`, saved);
+            } else {
+                console.log(`[ConnectionManager] No CurrentPlayer available to save position`);
+            }
+        } catch (e) {
+            console.log(`[ConnectionManager] Error saving position:`, e);
+        }
+
         localUserStore.setAuthToken(null);
         if (!ENABLE_OPENID || !this._currentRoom) {
             analyticsClient.loggedWithToken();
@@ -340,7 +365,12 @@ class ConnectionManager {
             // Check if the map is allowed for unauthenticated users
             const isAllowedMap =
                 roomPathUrl.pathname.includes("courtyard.tmj") || roomPathUrl.pathname.includes("UI.tmj");
-            if (!localUserStore.isLogged() && !isAllowedMap && this._currentRoom.authenticationMandatory) {
+            const isMeetingUrl = /\/meet\/[^/]+$/.test(roomPathUrl.pathname);
+            if (
+                !localUserStore.isLogged() &&
+                (!isAllowedMap || isMeetingUrl) &&
+                this._currentRoom.authenticationMandatory
+            ) {
                 const redirect = this.loadOpenIDScreen(false);
                 if (redirect === null) {
                     throw new Error("Access denied for anonymous user and unable to redirect to login.");

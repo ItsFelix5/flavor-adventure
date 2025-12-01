@@ -9,10 +9,27 @@ let LOGIN_POPUP_URL = '';
 
 let website;
 let lastPlayerY = 0;
+let lastPlayerX = 0;
 let iframeElement = null;
 
 // Map dims 
 const MAP_HEIGHT = 60 * 32; // this can be modified to slow the scroll effect, but it 1:1 for now
+
+// Save position via postMessage to parent window (for anonymous users)
+function savePreLoginPosition(x, y) {
+    try {
+        // Send message to parent window to save position
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: 'savePreLoginPosition',
+                x: x,
+                y: y
+            }, '*');
+        }
+    } catch (e) {
+        console.error('[ui-bundle] Failed to send position:', e);
+    }
+}
 
 
 // Wait for the API to be ready
@@ -182,11 +199,16 @@ WA.onInit().then(async () => {
     
     WA.player.onPlayerMove((event) => {
         const currentY = event.y;
+        const currentX = event.x;
         
-    
         lastPlayerY = currentY;
+        lastPlayerX = currentX;
         updateIframeScroll(currentY);
-    
+        
+        // Continuously save position for anonymous users so it persists through login
+        if (!WA.player.isLogged) {
+            savePreLoginPosition(currentX, currentY);
+        }
     });
 
     console.log('Player move tracking initialized');
@@ -194,6 +216,11 @@ WA.onInit().then(async () => {
     
     WA.player.getPosition().then(pos => {
         lastPlayerY = pos.y;
+        lastPlayerX = pos.x;
+        // Save initial position for anonymous users
+        if (!WA.player.isLogged) {
+            savePreLoginPosition(pos.x, pos.y);
+        }
     });
 });
 
@@ -205,16 +232,10 @@ function updateIframeScroll(playerY) {
     // Lower Y (top of map) = 0% scroll (top of page)
     const normalizedY = Math.max(0, Math.min(1, 1 - ((playerY*0.5) / MAP_HEIGHT)));
     
-    console.log(`Player Y: ${Math.round(playerY)}, Scroll: ${Math.round(normalizedY * 100)}%`);
-    
-    
     if (iframeElement && iframeElement.contentWindow) {
-        console.log('Sending postMessage to iframe with scroll:', normalizedY);
         iframeElement.contentWindow.postMessage({
             scrollPercent: normalizedY
         }, '*');
-    } else {
-        console.log('iframe not ready yet');
     }
 }
 

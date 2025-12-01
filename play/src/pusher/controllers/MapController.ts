@@ -77,9 +77,10 @@ export class MapController extends BaseHttpController {
                 if (mapDetailsParsed.success) {
                     mapDetails = mapDetailsParsed.data;
                     const isAllowedMap = query.playUri.includes("courtyard.tmj") || query.playUri.includes("UI.tmj");
-                    if (isAllowedMap) {
+                    const isMeetingUrl = /\/meet\/[^/]+$/.test(query.playUri);
+                    if (isAllowedMap && !isMeetingUrl) {
                         mapDetails.authenticationMandatory = false;
-                    } else if (DISABLE_ANONYMOUS) {
+                    } else if (DISABLE_ANONYMOUS || isMeetingUrl) {
                         mapDetails.authenticationMandatory = true;
                     }
                 }

@@ -823,6 +823,7 @@ export class GameScene extends DirtyScene {
         this.createCurrentPlayer();
         this.removeAllRemotePlayers(); //cleanup the list  of remote players in case the scene was rebooted
 
+        this.tryRestorePreLoginPosition();
         this.tryMovePlayerWithMoveToParameter();
 
         this.cameraManager = new CameraManager(
@@ -3370,6 +3371,31 @@ ${escapedMessage}
      * - if not found, to the Tiled area with the given name
      * - if not found, to the Tiled layer with the given name
      */
+    /**
+     * Restore player position from before login redirect (if available)
+     */
+    private tryRestorePreLoginPosition(): void {
+        console.log(`[GameScene] tryRestorePreLoginPosition called`);
+        // Check raw localStorage value for debugging
+        const rawValue = localStorage.getItem("preLoginPosition");
+        console.log(`[GameScene] Raw localStorage preLoginPosition:`, rawValue);
+
+        const savedPosition = localUserStore.getPreLoginPosition();
+        const isLogged = localUserStore.isLogged();
+        console.log(`[GameScene] savedPosition:`, savedPosition, `isLogged:`, isLogged);
+        if (savedPosition) {
+            console.log(`[GameScene] Restoring pre-login position: (${savedPosition.x}, ${savedPosition.y})`);
+            this.CurrentPlayer.x = savedPosition.x;
+            this.CurrentPlayer.y = savedPosition.y;
+            console.log(
+                `[GameScene] Player position after restore: (${this.CurrentPlayer.x}, ${this.CurrentPlayer.y})`
+            );
+            localUserStore.clearPreLoginPosition();
+        } else {
+            console.log(`[GameScene] No saved position to restore`);
+        }
+    }
+
     private tryMovePlayerWithMoveToParameter(): void {
         const moveToParam = urlManager.getHashParameter("moveTo");
         if (moveToParam) {
