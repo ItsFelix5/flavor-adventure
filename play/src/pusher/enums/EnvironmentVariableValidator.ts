@@ -204,6 +204,7 @@ export const EnvironmentVariables = z.object({
     ICON_URL: AbsoluteOrRelativeUrl,
     STUN_SERVER: z.string().optional(),
     TURN_SERVER: z.string().optional(),
+    METERED_TURN_API_URL: z.string().url().optional().or(z.literal("")),
     SKIP_RENDER_OPTIMIZATIONS: BoolAsString.optional().transform((val) => toBool(val, false)),
     DISABLE_NOTIFICATIONS: BoolAsString.optional().transform((val) => toBool(val, false)),
     TURN_USER: z.string().optional(),

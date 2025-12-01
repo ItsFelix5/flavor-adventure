@@ -879,7 +879,11 @@ export class Space implements SpaceInterface {
     public getVideoPeerVideoBox(id: SpaceUser["spaceUserId"]): VideoBox | undefined {
         const videoBox = this.allVideoStreamStore.get(id);
         if (!videoBox) {
-            console.error(">>>>> getVideoPeerVideoBox => Video box not found for user", id);
+            // This can happen during race conditions when peers connect before users are added,
+            // or when the space is being destroyed. Only log if space is still active.
+            if (!this._isDestroyed) {
+                console.debug("getVideoPeerVideoBox => Video box not found for user (may be pending)", id);
+            }
             return undefined;
         }
         return videoBox;

@@ -1,10 +1,20 @@
 import Debug from "debug";
 import { TurnCredentialsAnswer } from "@workadventure/messages";
 import type { UserSimplePeerInterface } from "../../WebRtc/SimplePeer";
-import { STUN_SERVER, TURN_PASSWORD, TURN_SERVER, TURN_USER } from "../../Enum/EnvironmentVariable";
+import {
+    METERED_TURN_API_URL,
+    STUN_SERVER,
+    TURN_PASSWORD,
+    TURN_SERVER,
+    TURN_USER,
+} from "../../Enum/EnvironmentVariable";
 import { helpWebRtcSettingsVisibleStore } from "../../Stores/HelpSettingsStore";
 import { analyticsClient } from "../../Administration/AnalyticsClient";
 import { isFirefox, isSafari } from "../../WebRtc/DeviceUtils";
+
+// Cache for Metered TURN credentials
+let meteredIceServersCache: RTCIceServer[] | null = null;
+let meteredIceServersCacheExpiry = 0;
 
 export const debug = Debug("CheckTurn");
 
@@ -47,9 +57,70 @@ export function srcObject(node: HTMLVideoElement, stream: MediaStream | null | u
     };
 }
 
+/**
+ * Fetch ICE servers from Metered API
+ * Caches the result for 1 hour to avoid excessive API calls
+ */
+async function fetchMeteredIceServers(): Promise<RTCIceServer[]> {
+    if (!METERED_TURN_API_URL) {
+        return [];
+    }
+
+    // Return cached credentials if still valid
+    if (meteredIceServersCache && Date.now() < meteredIceServersCacheExpiry) {
+        debug("Using cached Metered ICE servers");
+        return meteredIceServersCache;
+    }
+
+    try {
+        debug("Fetching Metered ICE servers from API");
+        const response = await fetch(METERED_TURN_API_URL);
+        if (!response.ok) {
+            throw new Error(`Metered API returned ${response.status}`);
+        }
+        const iceServers: RTCIceServer[] = await response.json();
+
+        // Cache for 1 hour (Metered credentials typically last 24h)
+        // eslint-disable-next-line require-atomic-updates
+        meteredIceServersCache = iceServers;
+        // eslint-disable-next-line require-atomic-updates
+        meteredIceServersCacheExpiry = Date.now() + 60 * 60 * 1000;
+
+        debug("Fetched Metered ICE servers:", iceServers);
+        return iceServers;
+    } catch (error) {
+        console.error("Failed to fetch Metered ICE servers:", error);
+        return [];
+    }
+}
+
+// Store for async-fetched ICE servers (used by getIceServersConfig)
+let asyncIceServers: RTCIceServer[] = [];
+
+/**
+ * Initialize Metered ICE servers asynchronously
+ * Call this early in app initialization
+ */
+export async function initMeteredIceServers(): Promise<void> {
+    if (METERED_TURN_API_URL) {
+        asyncIceServers = await fetchMeteredIceServers();
+    }
+}
+
+// Initialize on module load
+if (METERED_TURN_API_URL) {
+    initMeteredIceServers().catch(console.error);
+}
+
 export function getIceServersConfig(user: TurnCredentialsAnswer): RTCIceServer[] {
     const config: RTCIceServer[] = [];
     const firefoxBrowser = isFirefox();
+
+    // If we have Metered ICE servers, use those
+    if (asyncIceServers.length > 0) {
+        debug("Using Metered ICE servers");
+        return asyncIceServers;
+    }
 
     if (STUN_SERVER) {
         config.push({
@@ -92,7 +163,8 @@ export function checkCoturnServer(user: UserSimplePeerInterface) {
     let turnServerReached = false;
     let checkPeerConnexionStatusTimeOut: NodeJS.Timeout | null = null;
 
-    if (!TURN_SERVER) {
+    // Check if we have any TURN configuration (static or Metered)
+    if (!TURN_SERVER && !METERED_TURN_API_URL && asyncIceServers.length === 0) {
         debug("No TURN server configured.");
         return;
     }
