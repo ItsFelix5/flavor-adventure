@@ -103,6 +103,10 @@ export class Space implements SpaceInterface {
     private _isDestroyed = false;
     private initPromise: Deferred<void> | undefined;
 
+    // Pending peers that arrived before the user was added to the space
+    private pendingVideoPeers: Map<string, Streamable> = new Map();
+    private pendingScreenSharingPeers: Map<string, Streamable> = new Map();
+
     /**
      * IMPORTANT: The only valid way to create a space is to use the SpaceRegistry.
      * Do not call this constructor directly.
@@ -259,8 +263,9 @@ export class Space implements SpaceInterface {
             const videoBox = this.getVideoPeerVideoBox(spaceUserId);
 
             if (!videoBox) {
-                // Should not happen , we should have a videoBox for all users
-                console.error("observeVideoPeerAdded : videoBox not found for user", spaceUserId);
+                // User hasn't been added yet - queue the peer for later
+                console.debug("observeVideoPeerAdded : videoBox not found for user, queuing peer", spaceUserId);
+                this.pendingVideoPeers.set(spaceUserId, peer);
                 return;
             }
 
@@ -275,15 +280,16 @@ export class Space implements SpaceInterface {
             }
 
             if (!spaceUserId) {
-                console.error("observeVideoPeerAdded : peer has no spaceUserId");
+                console.error("observeScreenSharingPeerAdded : peer has no spaceUserId");
                 return;
             }
 
             const videoBox = this.getScreenSharingPeerVideoBox(spaceUserId);
 
             if (!videoBox) {
-                // Should not happen , we should have a videoBox for all users
-                console.error("observeScreenSharingPeerAdded : videoBox not found for user", spaceUserId);
+                // User hasn't been added yet - queue the peer for later
+                console.debug("observeScreenSharingPeerAdded : videoBox not found for user, queuing peer", spaceUserId);
+                this.pendingScreenSharingPeers.set(spaceUserId, peer);
                 return;
             }
 
@@ -560,11 +566,18 @@ export class Space implements SpaceInterface {
             if (!this._users.has(user.spaceUserId)) {
                 if (this.isVideoSpace() && user.spaceUserId !== this._mySpaceUserId) {
                     const videoBox = this.getEmptyVideoBox(extendSpaceUser);
-                    const streamable = this.spacePeerManager.getVideoForUser(user.spaceUserId);
+                    // Check for pending video peer first, then fall back to spacePeerManager
+                    const pendingVideoPeer = this.pendingVideoPeers.get(user.spaceUserId);
+                    const streamable = pendingVideoPeer ?? this.spacePeerManager.getVideoForUser(user.spaceUserId);
                     if (streamable) {
                         videoBox.streamable.set(streamable);
                     }
                     this.allVideoStreamStore.set(user.spaceUserId, videoBox);
+
+                    // Clean up pending peer if it was used
+                    if (pendingVideoPeer) {
+                        this.pendingVideoPeers.delete(user.spaceUserId);
+                    }
 
                     if (this._blackListManager.isBlackListed(user.spaceUserId)) {
                         this.emitPrivateMessage(
@@ -576,13 +589,20 @@ export class Space implements SpaceInterface {
                         );
                     }
 
-                    if (user.screenSharingState) {
-                        const videoBox = this.getEmptyVideoBox(extendSpaceUser, true);
-                        const streamable = this.spacePeerManager.getScreenSharingForUser(user.spaceUserId);
-                        if (streamable) {
-                            videoBox.streamable.set(streamable);
+                    // Check for pending screen sharing peer
+                    const pendingScreenPeer = this.pendingScreenSharingPeers.get(user.spaceUserId);
+                    if (pendingScreenPeer || user.screenSharingState) {
+                        const screenVideoBox = this.getEmptyVideoBox(extendSpaceUser, true);
+                        const screenStreamable =
+                            pendingScreenPeer ?? this.spacePeerManager.getScreenSharingForUser(user.spaceUserId);
+                        if (screenStreamable) {
+                            screenVideoBox.streamable.set(screenStreamable);
                         }
-                        this.allScreenShareStreamStore.set(user.spaceUserId, videoBox);
+                        this.allScreenShareStreamStore.set(user.spaceUserId, screenVideoBox);
+
+                        if (pendingScreenPeer) {
+                            this.pendingScreenSharingPeers.delete(user.spaceUserId);
+                        }
                     }
                 }
 
@@ -602,13 +622,31 @@ export class Space implements SpaceInterface {
 
         if (!this._users.has(user.spaceUserId)) {
             if (this.isVideoSpace() && user.spaceUserId !== this._mySpaceUserId) {
-                const streamable = this.spacePeerManager.getVideoForUser(user.spaceUserId);
+                // Check for pending video peer first, then fall back to spacePeerManager
+                const pendingVideoPeer = this.pendingVideoPeers.get(user.spaceUserId);
+                const streamable = pendingVideoPeer ?? this.spacePeerManager.getVideoForUser(user.spaceUserId);
                 const videoBox = this.getEmptyVideoBox(extendSpaceUser);
 
                 if (streamable) {
                     videoBox.streamable.set(streamable);
                 }
                 this.allVideoStreamStore.set(user.spaceUserId, videoBox);
+
+                // Clean up pending peer if it was used
+                if (pendingVideoPeer) {
+                    this.pendingVideoPeers.delete(user.spaceUserId);
+                }
+
+                // Check for pending screen sharing peer
+                const pendingScreenPeer = this.pendingScreenSharingPeers.get(user.spaceUserId);
+                if (pendingScreenPeer || user.screenSharingState) {
+                    const screenVideoBox = this.getEmptyVideoBox(extendSpaceUser, true);
+                    if (pendingScreenPeer) {
+                        screenVideoBox.streamable.set(pendingScreenPeer);
+                        this.pendingScreenSharingPeers.delete(user.spaceUserId);
+                    }
+                    this.allScreenShareStreamStore.set(user.spaceUserId, screenVideoBox);
+                }
 
                 if (this._blackListManager.isBlackListed(user.spaceUserId)) {
                     this.emitPrivateMessage(
@@ -646,6 +684,10 @@ export class Space implements SpaceInterface {
 
             this.allVideoStreamStore.delete(spaceUserId);
             this.allScreenShareStreamStore.delete(spaceUserId);
+
+            // Clean up any pending peers for this user
+            this.pendingVideoPeers.delete(spaceUserId);
+            this.pendingScreenSharingPeers.delete(spaceUserId);
         }
     }
 
