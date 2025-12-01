@@ -380,6 +380,11 @@ export class AuthenticateController extends BaseHttpController {
                         console.warn("[AuthenticateController] Failed to fetch Slack username:", e);
                     }
                 }
+                // Fallback to slackId if we still don't have a name
+                if (!name && slackId) {
+                    name = slackId;
+                    console.info("[AuthenticateController] Using slackId as fallback name:", name);
+                }
                 console.info("[AuthenticateController] Final username to set:", name);
 
                 // Upsert user
