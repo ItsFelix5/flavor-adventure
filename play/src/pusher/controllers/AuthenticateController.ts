@@ -1,5 +1,4 @@
 import fs from "fs";
-import { v4 } from "uuid";
 import { RegisterData } from "@workadventure/messages";
 import { z } from "zod";
 import Mustache from "mustache";
@@ -8,7 +7,7 @@ import Debug from "debug";
 import { AuthTokenData, jwtTokenManager } from "../services/JWTTokenManager";
 import { openIDClient } from "../services/OpenIDClient";
 import { hackClubAuthClient } from "../services/HackClubAuthClient";
-import { DISABLE_ANONYMOUS, FRONT_URL } from "../enums/EnvironmentVariable";
+import { FRONT_URL } from "../enums/EnvironmentVariable";
 import { adminService } from "../services/AdminService";
 import { validateQuery } from "../services/QueryValidator";
 import { VerifyDomainService } from "../services/verifyDomain/VerifyDomainService";
@@ -79,7 +78,6 @@ export class AuthenticateController extends BaseHttpController {
         this.matrixCallback();
         this.logoutCallback();
         this.register();
-        this.anonymLogin();
         this.profileCallback();
         this.logoutUser();
     }
@@ -468,46 +466,6 @@ export class AuthenticateController extends BaseHttpController {
                 mapUrlStart,
                 organizationMemberToken,
             } satisfies RegisterData);
-        });
-    }
-
-    /**
-     * @openapi
-     * /anonymLogin:
-     *   post:
-     *     description: Generates an "anonymous" JWT token allowing to connect to WorkAdventure anonymously.
-     *     responses:
-     *       200:
-     *         description: The details of the logged user
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *               properties:
-     *                 authToken:
-     *                   type: string
-     *                   description: A unique identification JWT token
-     *                 userUuid:
-     *                   type: string
-     *                   description: Unique user ID
-     *       403:
-     *         description: Anonymous login is disabled at the configuration level (environment variable DISABLE_ANONYMOUS = true)
-     */
-    private anonymLogin(): void {
-        this.app.post("/anonymLogin", (req, res) => {
-            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
-            if (DISABLE_ANONYMOUS) {
-                res.status(403).send("");
-                return;
-            } else {
-                const userUuid = v4();
-                const authToken = jwtTokenManager.createAuthToken(userUuid);
-                res.json({
-                    authToken,
-                    userUuid,
-                });
-                return;
-            }
         });
     }
 
