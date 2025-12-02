@@ -1,15 +1,14 @@
 import fs from "fs";
 import { v4 } from "uuid";
-import { MeRequest, MeResponse, RegisterData } from "@workadventure/messages";
+import { RegisterData } from "@workadventure/messages";
 import { z } from "zod";
-import { JsonWebTokenError } from "jsonwebtoken";
 import Mustache from "mustache";
 import { Application } from "express";
 import Debug from "debug";
 import { AuthTokenData, jwtTokenManager } from "../services/JWTTokenManager";
 import { openIDClient } from "../services/OpenIDClient";
 import { hackClubAuthClient } from "../services/HackClubAuthClient";
-import { DISABLE_ANONYMOUS, FRONT_URL, MATRIX_PUBLIC_URI } from "../enums/EnvironmentVariable";
+import { DISABLE_ANONYMOUS, FRONT_URL } from "../enums/EnvironmentVariable";
 import { adminService } from "../services/AdminService";
 import { validateQuery } from "../services/QueryValidator";
 import { VerifyDomainService } from "../services/verifyDomain/VerifyDomainService";
@@ -76,7 +75,6 @@ export class AuthenticateController extends BaseHttpController {
     routes(): void {
         this.authSlack();
         this.authHackClub();
-        this.me();
         this.openIDCallback();
         this.matrixCallback();
         this.logoutCallback();
@@ -218,131 +216,6 @@ export class AuthenticateController extends BaseHttpController {
             });
 
             res.redirect(loginUri);
-        });
-    }
-
-    private me(): void {
-        /**
-         * @openapi
-         * /me:
-         *   get:
-         *     description: TODO
-         *     parameters:
-         *      - name: "code"
-         *        in: "query"
-         *        description: "todo"
-         *        required: false
-         *        type: "string"
-         *      - name: "nonce"
-         *        in: "query"
-         *        description: "todo"
-         *        required: false
-         *        type: "string"
-         *      - name: "token"
-         *        in: "query"
-         *        description: "todo"
-         *        required: false
-         *        type: "string"
-         *      - name: "playUri"
-         *        in: "query"
-         *        description: "todo"
-         *        required: true
-         *        type: "string"
-         *     responses:
-         *       200:
-         *         description: Response to the /me endpoint
-         *         schema:
-         *           $ref: '#/definitions/MeResponse'
-         *       401:
-         *         description: Thrown when the token is invalid
-         */
-
-        this.app.get("/me", async (req, res) => {
-            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
-            const IPAddress = req.header("x-forwarded-for") ?? "";
-            const query = validateQuery(req, res, MeRequest);
-            if (query === undefined) {
-                return;
-            }
-            const { token, playUri, localStorageCompanionTextureId, chatID } = query;
-            let localStorageCharacterTextureIds = query["localStorageCharacterTextureIds[]"];
-            if (typeof localStorageCharacterTextureIds === "string") {
-                localStorageCharacterTextureIds = [localStorageCharacterTextureIds];
-            }
-            try {
-                const authTokenData: AuthTokenData = jwtTokenManager.verifyJWTToken(token, false);
-
-                //Get user data from Admin Back Office
-
-                const resUserData = await adminService.fetchMemberDataByUuid(
-                    authTokenData.identifier,
-                    authTokenData.accessToken,
-                    playUri,
-                    IPAddress,
-                    localStorageCharacterTextureIds ?? [],
-                    localStorageCompanionTextureId,
-                    req.header("accept-language"),
-                    authTokenData.tags,
-                    chatID
-                );
-
-                if (resUserData.status === "error") {
-                    res.json(resUserData);
-                    return;
-                }
-
-                if (authTokenData.accessToken == undefined) {
-                    //if not nonce and code, anonymous user connected
-                    //get data with identifier and return token
-                    res.json({
-                        authToken: token,
-                        username: authTokenData?.username,
-                        locale: authTokenData?.locale,
-
-                        ...resUserData,
-                        matrixUserId: authTokenData?.matrixUserId,
-                        matrixServerUrl: MATRIX_PUBLIC_URI,
-                    } satisfies MeResponse);
-                    return;
-                }
-
-                try {
-                    const resCheckTokenAuth = await openIDClient.checkTokenAuth(authTokenData.accessToken);
-                    res.json({
-                        username: authTokenData?.username,
-                        authToken: token,
-                        locale: authTokenData?.locale,
-                        matrixUserId: authTokenData?.matrixUserId,
-                        matrixServerUrl: (resCheckTokenAuth.matrix_url as string | undefined) ?? MATRIX_PUBLIC_URI,
-
-                        ...resUserData,
-                        ...resCheckTokenAuth,
-                    } satisfies MeResponse);
-                } catch (err) {
-                    console.warn("Error while checking token auth", err);
-                    throw new JsonWebTokenError("Invalid token");
-                }
-                return;
-            } catch (err) {
-                if (err instanceof JsonWebTokenError) {
-                    res.status(401);
-                    res.send("Invalid token");
-                    return;
-                }
-
-                /*if (isAxiosError(err)) {
-                    const errorType = ErrorApiData.safeParse(err?.response?.data);
-                    if (errorType.success) {
-                        const status = err?.response?.status ?? 500;
-                        res.atomic(() => {
-                            res.sendStatus(status);
-                            res.json(errorType.data);
-                        });
-                        return;
-                    }
-                }*/
-                throw err;
-            }
         });
     }
 
