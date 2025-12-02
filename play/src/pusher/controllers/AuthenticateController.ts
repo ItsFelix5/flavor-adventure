@@ -72,87 +72,12 @@ export class AuthenticateController extends BaseHttpController {
     }
 
     routes(): void {
-        this.authSlack();
         this.authHackClub();
         this.openIDCallback();
         this.matrixCallback();
         this.logoutCallback();
         this.register();
         this.logoutUser();
-    }
-
-    private authSlack(): void {
-        /**
-         * @openapi
-         * /auth/slack:
-         *   get:
-         *     description: Redirects the user to the Slack login screen
-         *     parameters:
-         *      - name: "nonce"
-         *        in: "query"
-         *        description: "todo"
-         *        required: true
-         *        type: "string"
-         *      - name: "state"
-         *        in: "query"
-         *        description: "todo"
-         *        required: true
-         *        type: "string"
-         *      - name: "playUri"
-         *        in: "query"
-         *        description: "todo"
-         *        required: false
-         *        type: "string"
-         *     responses:
-         *       302:
-         *         description: Redirects the user to the Slack login screen
-         *
-         */
-
-        this.app.get("/auth/slack", async (req, res) => {
-            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
-            const query = validateQuery(
-                req,
-                res,
-                z.object({
-                    playUri: z.string(),
-                    manuallyTriggered: z.literal("true").optional(),
-                    chatRoomId: z.string().optional(),
-                    providerId: z.string().optional(),
-                    providerScopes: z.string().array().optional(), // Optional scopes to request
-                })
-            );
-            if (query === undefined) {
-                return;
-            }
-
-            // Let's validate the playUri (we don't want a hacker to forge a URL that will redirect to a malicious URL)
-            const verifyDomainService_ = VerifyDomainService.get(await adminService.getCapabilities());
-            const verifyDomainResult = await verifyDomainService_.verifyDomain(query.playUri);
-            if (!verifyDomainResult) {
-                res.status(403);
-                res.send("Unauthorized domain in playUri");
-                return;
-            }
-
-            const loginUri = await openIDClient.authorizationUrl(
-                res,
-                query.playUri,
-                req,
-                query.manuallyTriggered,
-                query.chatRoomId,
-                query.providerId,
-                query.providerScopes
-            );
-            res.cookie("playUri", query.playUri, {
-                httpOnly: true,
-                secure: req.secure && process.env.NODE_ENV !== "development", // enforce https only in prod
-                sameSite: "lax",
-            });
-
-            res.redirect(loginUri);
-            return;
-        });
     }
 
     private authHackClub(): void {
