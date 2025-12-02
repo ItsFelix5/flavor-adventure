@@ -1,13 +1,14 @@
 import fs from "fs";
-import { RegisterData } from "@workadventure/messages";
+import { MeRequest, MeResponse, RegisterData } from "@workadventure/messages";
 import { z } from "zod";
+import { JsonWebTokenError } from "jsonwebtoken";
 import Mustache from "mustache";
 import { Application } from "express";
 import Debug from "debug";
 import { AuthTokenData, jwtTokenManager } from "../services/JWTTokenManager";
 import { openIDClient } from "../services/OpenIDClient";
 import { hackClubAuthClient } from "../services/HackClubAuthClient";
-import { FRONT_URL } from "../enums/EnvironmentVariable";
+import { FRONT_URL, MATRIX_PUBLIC_URI } from "../enums/EnvironmentVariable";
 import { adminService } from "../services/AdminService";
 import { validateQuery } from "../services/QueryValidator";
 import { VerifyDomainService } from "../services/verifyDomain/VerifyDomainService";
@@ -73,11 +74,108 @@ export class AuthenticateController extends BaseHttpController {
 
     routes(): void {
         this.authHackClub();
+        this.me();
         this.openIDCallback();
         this.matrixCallback();
         this.logoutCallback();
         this.register();
         this.logoutUser();
+    }
+
+    private me(): void {
+        /**
+         * @openapi
+         * /me:
+         *   get:
+         *     description: Returns the current user's information
+         *     parameters:
+         *      - name: "token"
+         *        in: "query"
+         *        description: "JWT authentication token"
+         *        required: true
+         *        type: "string"
+         *      - name: "playUri"
+         *        in: "query"
+         *        description: "Room URL"
+         *        required: true
+         *        type: "string"
+         *     responses:
+         *       200:
+         *         description: Response to the /me endpoint
+         *         schema:
+         *           $ref: '#/definitions/MeResponse'
+         *       401:
+         *         description: Thrown when the token is invalid
+         */
+        this.app.get("/me", async (req, res) => {
+            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+            const IPAddress = req.header("x-forwarded-for") ?? "";
+            const query = validateQuery(req, res, MeRequest);
+            if (query === undefined) {
+                return;
+            }
+            const { token, playUri, localStorageCompanionTextureId, chatID } = query;
+            let localStorageCharacterTextureIds = query["localStorageCharacterTextureIds[]"];
+            if (typeof localStorageCharacterTextureIds === "string") {
+                localStorageCharacterTextureIds = [localStorageCharacterTextureIds];
+            }
+            try {
+                const authTokenData: AuthTokenData = jwtTokenManager.verifyJWTToken(token, false);
+
+                const resUserData = await adminService.fetchMemberDataByUuid(
+                    authTokenData.identifier,
+                    authTokenData.accessToken,
+                    playUri,
+                    IPAddress,
+                    localStorageCharacterTextureIds ?? [],
+                    localStorageCompanionTextureId,
+                    req.header("accept-language"),
+                    authTokenData.tags,
+                    chatID
+                );
+
+                if (resUserData.status === "error") {
+                    res.json(resUserData);
+                    return;
+                }
+
+                if (authTokenData.accessToken == undefined) {
+                    res.json({
+                        authToken: token,
+                        username: authTokenData?.username,
+                        locale: authTokenData?.locale,
+                        ...resUserData,
+                        matrixUserId: authTokenData?.matrixUserId,
+                        matrixServerUrl: MATRIX_PUBLIC_URI,
+                    } satisfies MeResponse);
+                    return;
+                }
+
+                try {
+                    const resCheckTokenAuth = await openIDClient.checkTokenAuth(authTokenData.accessToken);
+                    res.json({
+                        username: authTokenData?.username,
+                        authToken: token,
+                        locale: authTokenData?.locale,
+                        matrixUserId: authTokenData?.matrixUserId,
+                        matrixServerUrl: (resCheckTokenAuth.matrix_url as string | undefined) ?? MATRIX_PUBLIC_URI,
+                        ...resUserData,
+                        ...resCheckTokenAuth,
+                    } satisfies MeResponse);
+                } catch (err) {
+                    console.warn("Error while checking token auth", err);
+                    throw new JsonWebTokenError("Invalid token");
+                }
+                return;
+            } catch (err) {
+                if (err instanceof JsonWebTokenError) {
+                    res.status(401);
+                    res.send("Invalid token");
+                    return;
+                }
+                throw err;
+            }
+        });
     }
 
     private authHackClub(): void {
