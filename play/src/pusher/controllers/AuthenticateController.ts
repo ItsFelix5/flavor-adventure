@@ -1,4 +1,5 @@
 import fs from "fs";
+import { v4 } from "uuid";
 import { MeRequest, MeResponse, RegisterData } from "@workadventure/messages";
 import { z } from "zod";
 import { JsonWebTokenError } from "jsonwebtoken";
@@ -8,7 +9,7 @@ import Debug from "debug";
 import { AuthTokenData, jwtTokenManager } from "../services/JWTTokenManager";
 import { openIDClient } from "../services/OpenIDClient";
 import { hackClubAuthClient } from "../services/HackClubAuthClient";
-import { FRONT_URL, MATRIX_PUBLIC_URI } from "../enums/EnvironmentVariable";
+import { DISABLE_ANONYMOUS, FRONT_URL, MATRIX_PUBLIC_URI } from "../enums/EnvironmentVariable";
 import { adminService } from "../services/AdminService";
 import { validateQuery } from "../services/QueryValidator";
 import { VerifyDomainService } from "../services/verifyDomain/VerifyDomainService";
@@ -75,10 +76,12 @@ export class AuthenticateController extends BaseHttpController {
     routes(): void {
         this.authHackClub();
         this.me();
+        this.openIDLogin();
         this.openIDCallback();
         this.matrixCallback();
         this.logoutCallback();
         this.register();
+        this.anonymLogin();
         this.logoutUser();
     }
 
@@ -236,6 +239,75 @@ export class AuthenticateController extends BaseHttpController {
             });
 
             res.redirect(loginUri);
+        });
+    }
+
+    private openIDLogin(): void {
+        /**
+         * @openapi
+         * /login-screen:
+         *   get:
+         *     description: Show the login options screen
+         *     parameters:
+         *      - name: "playUri"
+         *        in: "query"
+         *        description: "Room URL"
+         *        required: true
+         *        type: "string"
+         *     responses:
+         *       200:
+         *         description: Show the login options screen
+         */
+        this.app.get("/login-screen", async (req, res) => {
+            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+            const query = validateQuery(
+                req,
+                res,
+                z.object({
+                    playUri: z.string(),
+                    manuallyTriggered: z.literal("true").optional(),
+                    chatRoomId: z.string().optional(),
+                    providerId: z.string().optional(),
+                    providerScopes: z.string().array().optional(),
+                })
+            );
+            if (query === undefined) {
+                return;
+            }
+
+            const verifyDomainService_ = VerifyDomainService.get(await adminService.getCapabilities());
+            const verifyDomainResult = await verifyDomainService_.verifyDomain(query.playUri);
+            if (!verifyDomainResult) {
+                res.status(403);
+                res.send("Unauthorized domain in playUri");
+                return;
+            }
+
+            const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
+
+            const html = Mustache.render(this.loginOptionsFile, {
+                queryString,
+            });
+            res.set("Cache-Control", "no-cache").type("html").send(html);
+            return;
+        });
+    }
+
+    private anonymLogin(): void {
+        this.app.post("/anonymLogin", (req, res) => {
+            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+            if (DISABLE_ANONYMOUS) {
+                res.status(403).send("");
+                return;
+            } else {
+                const userUuid = v4();
+                const authToken = jwtTokenManager.createAuthToken(userUuid);
+                res.json({
+                    authToken,
+                    userUuid,
+                });
+                return;
+            }
         });
     }
 
