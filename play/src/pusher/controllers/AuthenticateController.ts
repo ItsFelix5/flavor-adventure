@@ -75,6 +75,7 @@ export class AuthenticateController extends BaseHttpController {
 
     routes(): void {
         this.authHackClub();
+        this.hackClubCallback();
         this.me();
         this.openIDLogin();
         this.openIDCallback();
@@ -239,6 +240,122 @@ export class AuthenticateController extends BaseHttpController {
             });
 
             res.redirect(loginUri);
+        });
+    }
+
+    private hackClubCallback(): void {
+        /**
+         * @openapi
+         * /auth/hackclub/callback:
+         *   get:
+         *     description: Callback endpoint for Hack Club OAuth
+         */
+        this.app.get("/auth/hackclub/callback", async (req, res) => {
+            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
+
+            if (req.query.error) {
+                console.warn("Error from Hack Club OAuth:", req.query.error);
+                const playUri = req.cookies.playUri || FRONT_URL;
+                res.clearCookie("playUri");
+                res.redirect(playUri);
+                return;
+            }
+
+            const playUri = req.cookies.playUri;
+            if (!playUri) {
+                console.warn("Missing playUri in cookies, redirecting to home");
+                res.redirect(FRONT_URL);
+                return;
+            }
+
+            const state = req.cookies.oidc_state;
+            if (state && req.query.state && state !== req.query.state) {
+                console.error("State mismatch in Hack Club callback");
+                res.status(400).send("State mismatch");
+                return;
+            }
+            res.clearCookie("oidc_state");
+
+            try {
+                const code = req.query.code as string;
+                if (!code) {
+                    throw new Error("No code provided");
+                }
+
+                const accessToken = await hackClubAuthClient.exchangeCode(code);
+                const userInfo = await hackClubAuthClient.getUserInfo(accessToken);
+
+                const email = userInfo.email;
+                const slackId = userInfo.slack_id;
+
+                let name = userInfo.name;
+                const slackBotToken = process.env.SLACK_BOT_TOKEN;
+                console.info("[AuthenticateController] SlackID from HackClub:", slackId);
+                if (slackId && slackBotToken) {
+                    try {
+                        const slackResponse = await fetch(`https://slack.com/api/users.info?user=${slackId}`, {
+                            headers: { Authorization: `Bearer ${slackBotToken}` },
+                        });
+                        const slackData = (await slackResponse.json()) as {
+                            ok: boolean;
+                            user?: { name: string };
+                            error?: string;
+                        };
+                        if (slackData.ok && slackData.user?.name) {
+                            name = slackData.user.name;
+                            console.info("[AuthenticateController] Got Slack username:", name);
+                        } else {
+                            console.warn("[AuthenticateController] Slack API error:", slackData.error);
+                        }
+                    } catch (e) {
+                        console.warn("[AuthenticateController] Failed to fetch Slack username:", e);
+                    }
+                }
+                if (!name && slackId) {
+                    name = slackId;
+                }
+
+                let isAdmin = false;
+                let hasPets = false;
+                let isBanned = false;
+
+                if (slackId) {
+                    try {
+                        const userPerms = await postgresClient.upsertUser(slackId, name, email);
+                        isAdmin = userPerms.isAdmin;
+                        hasPets = userPerms.hasPets;
+                        isBanned = userPerms.isBanned;
+                    } catch (e) {
+                        console.error("[AuthenticateController] Failed to upsert user:", e);
+                    }
+                }
+
+                if (isBanned) {
+                    console.warn("[AuthenticateController] User is banned:", slackId);
+                    res.clearCookie("playUri");
+                    return res.redirect("/banned.html");
+                }
+
+                const tags = [];
+                if (isAdmin) tags.push("admin");
+                if (hasPets) tags.push("pets");
+
+                const authToken = jwtTokenManager.createAuthToken(
+                    email,
+                    accessToken,
+                    name,
+                    undefined,
+                    tags,
+                    email ? matrixProvider.getBareMatrixIdFromEmail(email) : undefined,
+                    slackId
+                );
+
+                res.clearCookie("playUri");
+                res.redirect(playUri + "?token=" + encodeURIComponent(authToken));
+            } catch (err) {
+                console.error("Error during Hack Club login callback:", err);
+                res.status(500).send("An error occurred while logging in with Hack Club.");
+            }
         });
     }
 
