@@ -1,20 +1,14 @@
 import Debug from "debug";
 import { TurnCredentialsAnswer } from "@workadventure/messages";
 import type { UserSimplePeerInterface } from "../../WebRtc/SimplePeer";
-import {
-    METERED_TURN_API_URL,
-    STUN_SERVER,
-    TURN_PASSWORD,
-    TURN_SERVER,
-    TURN_USER,
-} from "../../Enum/EnvironmentVariable";
+import { STUN_SERVER, TURN_PASSWORD, TURN_SERVER, TURN_USER } from "../../Enum/EnvironmentVariable";
 import { helpWebRtcSettingsVisibleStore } from "../../Stores/HelpSettingsStore";
 import { analyticsClient } from "../../Administration/AnalyticsClient";
 import { isFirefox, isSafari } from "../../WebRtc/DeviceUtils";
 
-// Cache for Metered TURN credentials
-let meteredIceServersCache: RTCIceServer[] | null = null;
-let meteredIceServersCacheExpiry = 0;
+// Cache for TURN credentials fetched from backend
+let turnIceServersCache: RTCIceServer[] | null = null;
+let turnIceServersCacheExpiry = 0;
 
 export const debug = Debug("CheckTurn");
 
@@ -58,38 +52,38 @@ export function srcObject(node: HTMLVideoElement, stream: MediaStream | null | u
 }
 
 /**
- * Fetch ICE servers from Metered API
+ * Fetch ICE servers from backend TURN proxy
  * Caches the result for 1 hour to avoid excessive API calls
  */
-async function fetchMeteredIceServers(): Promise<RTCIceServer[]> {
-    if (!METERED_TURN_API_URL) {
-        return [];
-    }
-
+async function fetchTurnIceServers(): Promise<RTCIceServer[]> {
     // Return cached credentials if still valid
-    if (meteredIceServersCache && Date.now() < meteredIceServersCacheExpiry) {
-        debug("Using cached Metered ICE servers");
-        return meteredIceServersCache;
+    if (turnIceServersCache && Date.now() < turnIceServersCacheExpiry) {
+        debug("Using cached TURN ICE servers");
+        return turnIceServersCache;
     }
 
     try {
-        debug("Fetching Metered ICE servers from API");
-        const response = await fetch(METERED_TURN_API_URL);
+        debug("Fetching TURN ICE servers from backend");
+        const response = await fetch("/api/turn-credentials");
         if (!response.ok) {
-            throw new Error(`Metered API returned ${response.status}`);
+            if (response.status === 404) {
+                debug("TURN service not configured on backend");
+                return [];
+            }
+            throw new Error(`TURN API returned ${response.status}`);
         }
         const iceServers: RTCIceServer[] = await response.json();
 
-        // Cache for 1 hour (Metered credentials typically last 24h)
+        // Cache for 1 hour
         // eslint-disable-next-line require-atomic-updates
-        meteredIceServersCache = iceServers;
+        turnIceServersCache = iceServers;
         // eslint-disable-next-line require-atomic-updates
-        meteredIceServersCacheExpiry = Date.now() + 60 * 60 * 1000;
+        turnIceServersCacheExpiry = Date.now() + 60 * 60 * 1000;
 
-        debug("Fetched Metered ICE servers:", iceServers);
+        debug("Fetched TURN ICE servers:", iceServers);
         return iceServers;
     } catch (error) {
-        console.error("Failed to fetch Metered ICE servers:", error);
+        console.error("Failed to fetch TURN ICE servers:", error);
         return [];
     }
 }
@@ -98,19 +92,15 @@ async function fetchMeteredIceServers(): Promise<RTCIceServer[]> {
 let asyncIceServers: RTCIceServer[] = [];
 
 /**
- * Initialize Metered ICE servers asynchronously
+ * Initialize TURN ICE servers asynchronously
  * Call this early in app initialization
  */
-export async function initMeteredIceServers(): Promise<void> {
-    if (METERED_TURN_API_URL) {
-        asyncIceServers = await fetchMeteredIceServers();
-    }
+export async function initTurnIceServers(): Promise<void> {
+    asyncIceServers = await fetchTurnIceServers();
 }
 
 // Initialize on module load
-if (METERED_TURN_API_URL) {
-    initMeteredIceServers().catch(console.error);
-}
+initTurnIceServers().catch(console.error);
 
 export function getIceServersConfig(user: TurnCredentialsAnswer): RTCIceServer[] {
     const config: RTCIceServer[] = [];
@@ -166,8 +156,8 @@ export function checkCoturnServer(user: UserSimplePeerInterface) {
     let turnServerReached = false;
     let checkPeerConnexionStatusTimeOut: NodeJS.Timeout | null = null;
 
-    // Check if we have any TURN configuration (static or Metered)
-    if (!TURN_SERVER && !METERED_TURN_API_URL && asyncIceServers.length === 0) {
+    // Check if we have any TURN configuration (static or from backend)
+    if (!TURN_SERVER && asyncIceServers.length === 0) {
         debug("No TURN server configured.");
         return;
     }

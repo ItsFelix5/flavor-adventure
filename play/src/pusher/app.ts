@@ -34,6 +34,7 @@ import { PlayerInfoController } from "./controllers/PlayerInfoController";
 import { DynamicMapController } from "./controllers/DynamicMapController";
 import { SlackUserController } from "./controllers/SlackUserController";
 import { MapRegistryController } from "./controllers/MapRegistryController";
+import { TurnController } from "./controllers/TurnController";
 import { postgresClient } from "./services/PostgresClient";
 
 class App {
@@ -113,6 +114,7 @@ class App {
         new DynamicMapController(this.app);
         new SlackUserController(this.app);
         new MapRegistryController(this.app);
+        new TurnController(this.app);
 
         const staticOptions = {
             extensions: [

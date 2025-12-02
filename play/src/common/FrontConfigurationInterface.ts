@@ -70,5 +70,4 @@ export interface FrontConfigurationInterface {
     CHAT_LOG_SECRET: string | undefined;
     HACK_CLUB_CLIENT_ID: string | undefined;
     HACK_CLUB_CLIENT_SECRET: string | undefined;
-    METERED_TURN_API_URL: string | undefined;
 }

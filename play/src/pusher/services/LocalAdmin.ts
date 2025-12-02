@@ -347,7 +347,7 @@ class LocalAdmin implements AdminInterface {
             mapUrl = protocol + "//" + match[1];
         }
 
-        const opidWokaNamePolicyCheck = OpidWokaNamePolicy.safeParse(OPID_WOKA_NAME_POLICY);
+        const _exhaustiveCheck = OpidWokaNamePolicy.safeParse(OPID_WOKA_NAME_POLICY);
         return Promise.resolve({
             mapUrl,
             wamUrl,
@@ -355,8 +355,6 @@ class LocalAdmin implements AdminInterface {
             authenticationMandatory: DISABLE_ANONYMOUS,
             contactPage: null,
             group: wamUrl ? "default" : null,
-            opidLogoutRedirectUrl: null,
-            opidUsernamePolicy: opidWokaNamePolicyCheck.success ? opidWokaNamePolicyCheck.data : null,
             loadingLogo: null,
             loginSceneLogo: null,
             errorSceneLogo: null,

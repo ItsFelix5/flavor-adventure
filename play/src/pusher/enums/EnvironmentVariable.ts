@@ -92,6 +92,7 @@ export const ENABLE_CHAT_DISCONNECTED_LIST: boolean = env.ENABLE_CHAT_DISCONNECT
 
 // If set to the string "true", the /openapi route will return the OpenAPI definition and the swagger-ui/ route will display the documentation
 export const ENABLE_OPENAPI_ENDPOINT = env.ENABLE_OPENAPI_ENDPOINT;
+export const METERED_TURN_API_URL = env.METERED_TURN_API_URL;
 
 // The URL to use if the user is visiting the first time and hitting the "/" route.
 export const START_ROOM_URL: string = env.START_ROOM_URL || "/_/global/maps.workadventu.re/starter/map.json";
@@ -220,6 +221,5 @@ export const FRONT_ENVIRONMENT_VARIABLES: FrontConfigurationInterface = {
     GRPC_MAX_MESSAGE_SIZE: env.GRPC_MAX_MESSAGE_SIZE,
     HACK_CLUB_CLIENT_ID: env.HACK_CLUB_CLIENT_ID,
     HACK_CLUB_CLIENT_SECRET: env.HACK_CLUB_CLIENT_SECRET,
-    METERED_TURN_API_URL: env.METERED_TURN_API_URL,
 };
 export const GRPC_MAX_MESSAGE_SIZE = env.GRPC_MAX_MESSAGE_SIZE;

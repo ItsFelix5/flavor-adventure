@@ -88,4 +88,3 @@ export const ENABLE_SAY = env.ENABLE_SAY;
 export const GRPC_MAX_MESSAGE_SIZE = env.GRPC_MAX_MESSAGE_SIZE;
 
 export const CHAT_LOG_SECRET = env.CHAT_LOG_SECRET;
-export const METERED_TURN_API_URL = env.METERED_TURN_API_URL;

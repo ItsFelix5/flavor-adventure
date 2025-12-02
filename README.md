@@ -41,7 +41,6 @@ Run:
 
 ```
 cp .env.template .env
-
 ```
 
 The environment will start with the OIDC mock server enabled by default.
