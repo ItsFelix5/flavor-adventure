@@ -106,13 +106,14 @@ class App {
         if (ENABLE_OPENAPI_ENDPOINT) {
             new SwaggerController(this.app);
         }
+        // DynamicMapController must be before FrontController to handle /slack/:slackId
+        new DynamicMapController(this.app);
+        new SlackUserController(this.app);
         new FrontController(this.app);
         new UserController(this.app);
         new MatrixRoomAreaController(this.app);
         new ChatLogController(this.app);
         new PlayerInfoController(this.app);
-        new DynamicMapController(this.app);
-        new SlackUserController(this.app);
         new MapRegistryController(this.app);
         new TurnController(this.app);
 

@@ -5,12 +5,12 @@ console.log('[house-with-name.js] Script started');
 function getFlavorMapsHost() {
     const host = window.location.host;
     
-    // Dev environment
+    // Dev
     if (host.includes('workadventure.localhost')) {
         return 'maps.workadventure.localhost';
     }
     
-    // Production
+    // Prod
     if (host.includes('hackclub.com')) {
         return 'flavor-adventure.hackclub.com';
     }
@@ -28,31 +28,14 @@ WA.room.onEnterZone('exitToSquare', () => {
     console.log('[house-with-name.js] Redirecting to courtyard:', courtyardUrl);
     WA.nav.goToRoom(courtyardUrl);
 });
-//TODO: ts does not work!
 function getSlackId() {
     console.log('[house-with-name.js] Getting Slack ID...');
-    console.log('[house-with-name.js] WA.room.id:', WA.room.id);
-
-    // Try WA.room.id
-    const match = WA.room.id.match(/slackId=([^&#]+)/);
-    if (match && match[1]) {
-        return match[1];
-    }
-
-    // Try window.location.hash 
-    try {
-        // Note: window.location might be the iframe location, which might differ from top window
-        const hash = window.location.hash;
-        console.log('[house-with-name.js] window.location.hash:', hash);
-        const hashMatch = hash.match(/slackId=([^&#]+)/);
-        if (hashMatch && hashMatch[1]) {
-            return hashMatch[1];
-        }
-    } catch (e) {
-        console.warn('[house-with-name.js] Error accessing window location:', e);
-    }
-
-    return null;
+    
+    // Use WA.player.slackId which is populated from the JWT token
+    const slackId = WA.player.slackId;
+    
+    
+    return slackId || null;
 }
 
 async function init() {

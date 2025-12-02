@@ -20,6 +20,16 @@
                         {
                          "name":"default",
                          "type":"string",
+                         "value":"Welcome"
+                        },
+                        {
+                         "name":"readableBy",
+                         "type":"string",
+                         "value":""
+                        },
+                        {
+                         "name":"writableBy",
+                         "type":"string",
                          "value":""
                         }]
                 }],

@@ -12,6 +12,8 @@ export class SlackUserController {
     }
 
     async getDisplayName(req: Request, res: Response) {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
         const { slackId } = req.params;
 
         if (!slackId || !/^[A-Z0-9]+$/.test(slackId)) {

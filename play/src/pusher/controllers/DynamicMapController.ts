@@ -85,14 +85,14 @@ export class DynamicMapController extends BaseHttpController {
                 console.warn(`[DynamicMapController] Could not fetch user: ${error}`);
             }
 
-            // Replace "Hello World" text object with display name (houses)
+            // Replace "{{ houseName }}" text object with display name (houses)
             if (mapData.layers) {
                 for (const layer of mapData.layers) {
                     if (layer.type === "objectgroup" && layer.objects) {
                         for (const obj of layer.objects) {
-                            if (obj.text && obj.text.text === "Hello World") {
-                                obj.text.text = displayName;
-                                console.log(`[DynamicMapController] Replaced text with: ${displayName}`);
+                            if (obj.text && obj.text.text === "{{ houseName }}") {
+                                obj.text.text = `${displayName}'s House`;
+                                console.log(`[DynamicMapController] Replaced text with: ${displayName}'s House`);
                             }
                         }
                     }

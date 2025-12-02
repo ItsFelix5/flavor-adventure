@@ -26,16 +26,12 @@ export class SlackHouseController {
         }
 
         try {
-            // Load template (cached after first load)
-            if (!this.templateCache) {
-                const templatePath = path.resolve(__dirname, "../../../maps/flavor/house.tmj");
-                const templateContent = await fs.readFile(templatePath, "utf-8");
-                this.templateCache = JSON.parse(templateContent);
-                console.log("[SlackHouseController] Template loaded and cached");
-            }
-
-            // Clone template
-            const mapJson = JSON.parse(JSON.stringify(this.templateCache));
+            const templatePath = path.resolve(process.cwd(), "../maps/flavor/house.tmj");
+            console.log(`[SlackHouseController] Loading template from: ${templatePath}`);
+            console.log(`[SlackHouseController] process.cwd(): ${process.cwd()}`);
+            const templateContent = await fs.readFile(templatePath, "utf-8");
+            const mapJson = JSON.parse(templateContent);
+            console.log("[SlackHouseController] Template loaded successfully");
 
             // Get display name from database
             let displayName = slackId; // fallback
@@ -44,16 +40,21 @@ export class SlackHouseController {
                 displayName = user.givenName;
             }
             console.log(`[SlackHouseController] Display name: ${displayName}`);
+            console.log(`[SlackHouseController] mapJson.layers count: ${mapJson.layers?.length}`);
 
-            // Find and replace "Hello World" text object
+            // Find and replace "{{ houseName }}" text object
             let replaced = false;
             for (const layer of mapJson.layers || []) {
+                console.log(`[SlackHouseController] Layer: ${layer.name}, type: ${layer.type}`);
                 if (layer.type === "objectgroup" && layer.objects) {
                     for (const obj of layer.objects) {
-                        if (obj.text && obj.text.text === "Hello World") {
-                            obj.text.text = displayName;
+                        if (obj.text) {
+                            console.log(`[SlackHouseController] Found text object: "${obj.text.text}"`);
+                        }
+                        if (obj.text && obj.text.text === "{{ houseName }}") {
+                            obj.text.text = `${displayName}'s House`;
                             replaced = true;
-                            console.log(`[SlackHouseController] Replaced text with: ${displayName}`);
+                            console.log(`[SlackHouseController] Replaced text with: ${displayName}'s House`);
                         }
                     }
                 }

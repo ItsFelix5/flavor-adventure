@@ -287,7 +287,7 @@ class LocalAdmin implements AdminInterface {
             });
         }
 
-        // Handle /slack/[SlackID]
+        // Handle /slack/[SlackID] - let DynamicMapController serve the map directly
         let slackMatch = /^\/slack\/([a-zA-Z0-9_]+)$/i.exec(roomUrl.pathname);
         if (!slackMatch) {
             // Check for /_/global/.../slack/...
@@ -303,14 +303,13 @@ class LocalAdmin implements AdminInterface {
                 };
             }
 
-            // If not found or not approved, redirect to the standard house
-            // We pass the Slack ID in the hash so the client-side scripts can read it and display the user name
-            // Derive maps host from the play URL host
-            const mapsHost = roomUrl.host.includes("workadventure.localhost")
-                ? roomUrl.host.replace(/^play\./, "maps.")
+            // Return the /slack/:slackId URL directly - DynamicMapController will serve the modified house map
+            const playHost = roomUrl.host.includes("workadventure.localhost")
+                ? roomUrl.host.replace(/^maps\./, "play.")
                 : roomUrl.host;
             return {
-                redirectUrl: `/_/global/${mapsHost}/flavor/house.tmj?slackId=${slackId}`,
+                mapUrl: `${roomUrl.protocol}//${playHost}/slack/${slackId}`,
+                group: null,
             };
         }
 
