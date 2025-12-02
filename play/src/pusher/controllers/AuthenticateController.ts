@@ -78,7 +78,6 @@ export class AuthenticateController extends BaseHttpController {
         this.matrixCallback();
         this.logoutCallback();
         this.register();
-        this.profileCallback();
         this.logoutUser();
     }
 
@@ -466,56 +465,6 @@ export class AuthenticateController extends BaseHttpController {
                 mapUrlStart,
                 organizationMemberToken,
             } satisfies RegisterData);
-        });
-    }
-
-    /**
-     * @openapi
-     * /profile-callback:
-     *   get:
-     *     description: ???
-     *     parameters:
-     *      - name: "token"
-     *        in: "query"
-     *        description: "A JWT authentication token ???"
-     *        required: true
-     *        type: "string"
-     *      - name: "playUri"
-     *        in: "query"
-     *        description: "Room URL of the current virtual place"
-     *        required: true
-     *        type: "string"
-     *     responses:
-     *       302:
-     *         description: Redirects the user to the profile screen of the admin
-     */
-    private profileCallback(): void {
-        this.app.get("/profile-callback", async (req, res) => {
-            debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
-            const query = validateQuery(
-                req,
-                res,
-                z.object({
-                    token: z.string(),
-                    playUri: z.string(),
-                })
-            );
-            if (query === undefined) {
-                return;
-            }
-            const { token, playUri } = query;
-            const authTokenData: AuthTokenData = jwtTokenManager.verifyJWTToken(token, false);
-            if (authTokenData.accessToken == undefined) {
-                throw Error("Token cannot be checked on OpenID connect provider");
-            }
-            await openIDClient.checkTokenAuth(authTokenData.accessToken);
-
-            const accessToken = authTokenData.accessToken;
-            //get login profile
-            res.status(302);
-            res.setHeader("Location", adminService.getProfileUrl(accessToken, playUri));
-            res.send("");
-            return;
         });
     }
 
