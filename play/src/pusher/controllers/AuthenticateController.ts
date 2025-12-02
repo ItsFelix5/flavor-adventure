@@ -146,11 +146,11 @@ export class AuthenticateController extends BaseHttpController {
          * @openapi
          * /openid-callback:
          *   get:
-         *     description: This endpoint is meant to be called by the OpenID provider after the OpenID provider handles a login attempt. The OpenID provider redirects the browser to this endpoint.
+         *     description: called by hackclub ID after a login attempt.
          *     parameters:
          *      - name: "code"
          *        in: "query"
-         *        description: "A unique code to be exchanged for an authentication token"
+         *        description: "code to be exchanged for an authentication token"
          *        required: false
          *        type: "string"
          *      - name: "nonce"
@@ -160,13 +160,13 @@ export class AuthenticateController extends BaseHttpController {
          *        type: "string"
          *     responses:
          *       302:
-         *         description: Redirects to play once authentication is done, unless we use an AdminAPI (in this case, we redirect to the AdminAPI with same parameters)
+         *         description: Redirects to play after
          */
 
         this.app.get("/openid-callback", async (req, res) => {
             debug(`AuthenticateController => [${req.method}] ${req.originalUrl} — IP: ${req.ip} — Time: ${Date.now()}`);
 
-            // Handle error from OpenID provider (e.g. user cancelled)
+            // Handle error from OpenID provider
             if (req.query.error) {
                 console.warn("Error from OpenID provider:", req.query.error, req.query.error_description);
                 const playUri = req.cookies.playUri || FRONT_URL;
