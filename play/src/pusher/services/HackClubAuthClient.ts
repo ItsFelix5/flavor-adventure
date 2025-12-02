@@ -34,7 +34,7 @@ export class HackClubAuthClient {
         url.searchParams.set("client_id", HACK_CLUB_CLIENT_ID);
         url.searchParams.set("redirect_uri", redirectUri);
         url.searchParams.set("response_type", "code");
-        url.searchParams.set("scope", "email name slack_id");
+        url.searchParams.set("scope", "openid profile email name slack_id verification_status");
         url.searchParams.set("state", state);
 
         return url.toString();
