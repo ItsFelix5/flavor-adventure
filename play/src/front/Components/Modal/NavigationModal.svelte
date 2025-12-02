@@ -125,13 +125,13 @@
 
             {#if !showJoinMeetingInput}
                 <div class="flex flex-col gap-3">
-                    <button
-                        class="rounded-lg bg-light-purple px-6 py-3 text-white hover:bg-light-purple/80 transition-colors"
-                        on:click={goToCourtyard}
-                    >
-                        Go to Courtyard
-                    </button>
                     {#if localUserStore.isLogged()}
+                        <button
+                            class="rounded-lg bg-light-purple px-6 py-3 text-white hover:bg-light-purple/80 transition-colors"
+                            on:click={goToCourtyard}
+                        >
+                            Go to Courtyard
+                        </button>
                         <button
                             class="rounded-lg bg-light-purple px-6 py-3 text-white hover:bg-light-purple/80 transition-colors"
                             on:click={goHome}
@@ -161,7 +161,8 @@
                         </button>
                     {:else}
                         <p class="text-center text-gray-300 py-4">
-                            Logged in users can navigate between their homes, meetings and shared spaces.
+                            Logged in users can navigate between their homes, meetings and shared spaces and message and
+                            talk to each other!
                         </p>
                     {/if}
                 </div>

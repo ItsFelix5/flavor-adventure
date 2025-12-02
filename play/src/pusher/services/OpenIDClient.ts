@@ -232,15 +232,15 @@ class OpenIDClient {
 
             return {
                 ...userInfoResponse,
-                email: userInfoResponse.email ?? "",
-                sub: userInfoResponse.sub ?? userInfoResponse.user_id ?? "",
+                email: (userInfoResponse.email as string) ?? "",
+                sub: (userInfoResponse.sub as string) ?? (userInfoResponse.user_id as string) ?? "",
                 access_token: accessToken,
                 username:
-                    userInfoResponse.name ??
+                    (userInfoResponse.name as string) ??
                     (userInfoResponse[OPID_USERNAME_CLAIM] as string) ??
-                    userInfoResponse.real_name ??
+                    (userInfoResponse.real_name as string) ??
                     "",
-                locale: (userInfoResponse[OPID_LOCALE_CLAIM] as string) ?? userInfoResponse.locale ?? "",
+                locale: (userInfoResponse[OPID_LOCALE_CLAIM] as string) ?? (userInfoResponse.locale as string) ?? "",
                 tags: (userInfoResponse[OPID_TAGS_CLAIM] as string[]) ?? [],
                 matrix_url: userInfoResponse.matrix_url as string | undefined,
                 matrix_identity_provider: userInfoResponse.matrix_identity_provider as string | undefined,
