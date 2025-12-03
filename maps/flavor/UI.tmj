@@ -397,6 +397,8 @@
          "id":89,
          "name":"pumpkin",
          "objects":[],
+         "offsetx":-0.5,
+         "offsety":-0.5,
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -441,12 +443,12 @@
         {
          "name":"mapCopyright",
          "type":"string",
-         "value":"Credit: Euan + workadventure"
+         "value":"Credit: Euan Ripper"
         }, 
         {
          "name":"mapDescription",
          "type":"string",
-         "value":"A perfect virtual office to get started with WorkAdventure!"
+         "value":"a scary scary graveyard "
         }, 
         {
          "name":"mapImage",

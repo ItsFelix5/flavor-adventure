@@ -290,7 +290,7 @@ WA.onInit().then(async () => {
                 isInExitZone = true;
                 if (!WA.player.isLogged) {
                     if (exitPopup === undefined) {
-                        exitPopup = WA.ui.openPopup("popupTarget", "Please log in to exit.", [{
+                        exitPopup = WA.ui.openPopup("popupTarget", "Lets get you a fresh start, click log in to choose who you will become", [{
                             label: "Close",
                             callback: (popup) => {
                                 popup.close();
@@ -310,7 +310,33 @@ WA.onInit().then(async () => {
                 exitPopup = undefined;
             }
         }
-
+        const inExitZone2 = (playerY <= (EXIT_AREA_Y + EXIT_AREA_HEIGHT*2));
+        
+        if (inExitZone2) {
+            if (!isInExitZone2) {
+                isInExitZone2 = true;
+                if (!WA.player.isLogged) {
+                    if (exitPopup === undefined) {
+                        exitPopup = WA.ui.openPopup("popupTarget", "If you promise to use your life with passion and build cool stuff, I'll let you come back to the world of flavortown.", [{
+                            label: "Close",
+                            callback: (popup) => {
+                                popup.close();
+                                exitPopup = undefined;
+                            }
+                        }]);
+                    }
+                } else {
+                    console.log(`redir`);
+                    WA.nav.goToRoom(EXIT_TARGET);
+                }
+            }
+        } else {
+            isInExitZone = false;
+            if (exitPopup) {
+                exitPopup.close();
+                exitPopup = undefined;
+            }
+        }
         // Death zone logic
         const inDeathZone = playerY >= DEATH_ZONE_Y;
 
@@ -318,7 +344,7 @@ WA.onInit().then(async () => {
             if (!isInDeathZone) {
                 isInDeathZone = true;
                 if (deathPopup === undefined) {
-                    deathPopup = WA.ui.openPopup("deathPopupTarget", "Oh no you are dead! maybe someone in this graveyard could help", [{
+                    deathPopup = WA.ui.openPopup("deathPopupTarget", "Uh Oh! Your dead :/ Right now you can't speak to others or explore beyond your graveyard, maybe someone inside could help...", [{
                         label: "Explore",
                         callback: (popup) => {
                             popup.close();

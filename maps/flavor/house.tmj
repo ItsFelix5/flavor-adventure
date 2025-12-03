@@ -3,6 +3,7 @@
  "infinite":false,
  "layers":[
         {
+         "draworder":"topdown",
          "id":78,
          "name":"Variables",
          "objects":[
@@ -10,35 +11,35 @@
                  "height":32,
                  "id":23,
                  "name":"houseName",
-                 "rotation":0,
-                 "type":"variable",
-                 "visible":true,
-                 "width":32,
-                 "x":0,
-                 "y":0,
                  "properties":[
                         {
                          "name":"default",
                          "type":"string",
                          "value":"Welcome"
-                        },
+                        }, 
                         {
                          "name":"readableBy",
                          "type":"string",
                          "value":""
-                        },
+                        }, 
                         {
                          "name":"writableBy",
                          "type":"string",
                          "value":""
-                        }]
+                        }],
+                 "rotation":0,
+                 "type":"variable",
+                 "visible":true,
+                 "width":32,
+                 "x":0,
+                 "y":0
                 }],
          "opacity":1,
          "type":"objectgroup",
          "visible":false,
          "x":0,
          "y":0
-        },
+        }, 
         {
          "data":[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -381,12 +382,12 @@
         {
          "name":"mapCopyright",
          "type":"string",
-         "value":"Credits: WorkAdventure (https:\/\/WorkAdventu.re) \nLicense: CC-BY-SA 3.0 (http:\/\/creativecommons.org\/licenses\/by-sa\/3.0\/)"
+         "value":"Credits: Euan"
         }, 
         {
          "name":"mapDescription",
          "type":"string",
-         "value":"A perfect virtual office to get started with WorkAdventure!"
+         "value":"the defualt house"
         }, 
         {
          "name":"mapImage",
