@@ -246,15 +246,15 @@ console.log('UI Exit Debug script started');
 // Will be set dynamically
 let EXIT_TARGET = '/_/global/flavor-adventure.hackclub.com/flavor/courtyard.tmj';
 const EXIT_AREA_Y = 192; // Top of exit area
-const EXIT_AREA_HEIGHT = 96; // Height of exit area (192-288 to catch player at Y 256)
+const EXIT_AREA_HEIGHT = 100; // Height of exit area (192-288 to catch player at Y 256)
 
 WA.onInit().then(async () => {
-    // Update EXIT_TARGET based on current room ID
+    
     try {
         const roomUrl = new URL(WA.room.id);
         let host = roomUrl.host;
         
-        // In dev, we need to switch from play. to maps.
+        
         if (host.includes('workadventure.localhost')) {
              host = host.replace('play.', 'maps.');
         }
@@ -274,7 +274,10 @@ WA.onInit().then(async () => {
     let isInExitZone = false;
     let exitPopup = undefined;
     
-    // Death zone logic
+    let isInExitZone2 = false;
+    let exitPopup2 = undefined;
+    
+    
     const DEATH_ZONE_Y = 128; // 
     let isInDeathZone = false;
     let deathPopup = undefined;
@@ -310,18 +313,18 @@ WA.onInit().then(async () => {
                 exitPopup = undefined;
             }
         }
-        const inExitZone2 = (playerY <= (EXIT_AREA_Y + EXIT_AREA_HEIGHT*2));
+        const inExitZone2 = (playerY <= (EXIT_AREA_Y + EXIT_AREA_HEIGHT*4)) && !inExitZone;
         
         if (inExitZone2) {
             if (!isInExitZone2) {
                 isInExitZone2 = true;
                 if (!WA.player.isLogged) {
-                    if (exitPopup === undefined) {
-                        exitPopup = WA.ui.openPopup("popupTarget", "If you promise to use your life with passion and build cool stuff, I'll let you come back to the world of flavortown.", [{
+                    if (exitPopup2 === undefined) {
+                        exitPopup2 = WA.ui.openPopup("popupTarget2", "If you promise to use your life with passion and build cool stuff, I'll let you come back to the world of flavortown.", [{
                             label: "Close",
                             callback: (popup) => {
                                 popup.close();
-                                exitPopup = undefined;
+                                exitPopup2 = undefined;
                             }
                         }]);
                     }
@@ -331,10 +334,10 @@ WA.onInit().then(async () => {
                 }
             }
         } else {
-            isInExitZone = false;
-            if (exitPopup) {
-                exitPopup.close();
-                exitPopup = undefined;
+            isInExitZone2 = false;
+            if (exitPopup2) {
+                exitPopup2.close();
+                exitPopup2 = undefined;
             }
         }
         // Death zone logic
